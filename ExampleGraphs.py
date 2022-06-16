@@ -36,12 +36,11 @@ class InterestingGraph():
         self.G = ComputationalGraph.ComputationalGraph()    
 
         x = CommonNodes.InputNode()
-        _sin = CommonNodes.Sin()
-        inv = CommonNodes.PointwiseDivide()
-        mul = CommonNodes.PointwiseMul()
-        out = CommonNodes.OutputNode()
-        c = CommonNodes.ConstantNode()
-        c.setValue(1)
+        c = CommonNodes.ConstantNode(1)
+        inv = CommonNodes.PointwiseDivide(c, x)
+        _sin = CommonNodes.Sin(inv)
+        mul = CommonNodes.PointwiseMul([x, _sin])
+        out = CommonNodes.OutputNode(mul)
 
         self.G.addNode(x, "x")
         self.G.addNode(_sin, "sin")
@@ -50,16 +49,15 @@ class InterestingGraph():
         self.G.addNode(mul, "*")
         self.G.addNode(out, "output")        
 
-        self.G.addEdge("x", "/", "out", "denominator")
-        self.G.addEdge("1", "/", "out", "numerator")
-        self.G.addEdge("/", "sin", "out", "in")
-        self.G.addEdge("x", "*", "out", "in1")
-        self.G.addEdge("sin", "*", "out", "in2")
-
-        self.G.addEdge("*", "output", "in", "output")       
+        self.G.addEdge("x", "/")
+        self.G.addEdge("1", "/")
+        self.G.addEdge("/", "sin")
+        self.G.addEdge("x", "*")
+        self.G.addEdge("sin", "*")
+        self.G.addEdge("*", "output")       
 
     def __call__(self, x):
         self.G.getNode("x").setValue(x)
         self.G.runForwardPass()
-        outputDict = self.G.getNode("output").getValue()
-        return outputDict["output"]        
+        o = self.G.getNode("output").getValue()
+        return o     

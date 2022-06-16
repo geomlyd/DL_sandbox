@@ -1,5 +1,4 @@
-from numpy import source
-from GraphNode import GraphNode, EdgeBuffer
+from GraphNode import GraphNode
 import graphlib
 
 class ComputationalGraph():
@@ -20,7 +19,7 @@ class ComputationalGraph():
 
         self.nodeTable[nodeName] = n
 
-    def addEdge(self, sourceNode : str, endNode : str, outEdgeName : str, inEdgeName : str):
+    def addEdge(self, sourceNode : str, endNode : str):
         if(sourceNode not in self.nodeTable.keys()):
             raise ValueError("Graph has no node named \"" + sourceNode)
         if(endNode not in self.nodeTable.keys()):
@@ -30,14 +29,6 @@ class ComputationalGraph():
             self.edgeTable[sourceNode].add(endNode)
         else:
             self.edgeTable[sourceNode] = set({endNode})
-        
-        existingEdgeBuffer = self.nodeTable[sourceNode].getExistingEdgeBuffer(outEdgeName)
-        if(existingEdgeBuffer is not None):
-            self.nodeTable[endNode].registerInEdgeBuffer(existingEdgeBuffer, inEdgeName)
-        else:
-            newEdge = EdgeBuffer()
-            self.nodeTable[sourceNode].registerOutEdgeBuffer(newEdge, outEdgeName)
-            self.nodeTable[endNode].registerInEdgeBuffer(newEdge, inEdgeName)
         
         try:
             self.graphIterator = tuple(graphlib.TopologicalSorter(self.edgeTable).static_order())

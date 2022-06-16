@@ -1,159 +1,154 @@
+from typing import List
 from torch import Graph
-from GraphNode import GraphNode, EdgeBuffer
+from GraphNode import GraphNode
 import numpy as np
 
 class InputNode(GraphNode):
 
-    def __init__(self):
+    def __init__(self, value=None):
         super().__init__()
-        self.content = None
+        self.value = None
 
     def setValue(self, v):
-        self.content = v
+        self.value = v
 
     def forwardPass(self):
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(self.content)
+        pass
 
     def backwardPass(self):
         pass
 
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        raise Exception("Input nodes cannot have in-edges")
 
 class OutputNode(GraphNode):
 
-    def __init__(self):
+    def __init__(self, producer : GraphNode = None):
         super().__init__()
-        self.content = None
+        self.value = None
+        self.producer = producer
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
 
     def forwardPass(self):
-        self.content = {}
-        for edgeName, edge in self.inEdges.items():
-            self.content[edgeName] = edge.readFromEdge()
-        
-    def getValue(self):
-        return self.content
+        self.value = self.producer.getValue()
 
     def backwardPass(self):
         pass
-
-    def registerOutEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        raise Exception("Output nodes cannot have out-edges")
 
 class ConstantNode(GraphNode):
 
-    def __init__(self):
+    def __init__(self, value=None):
         super().__init__()
-        self.content = None    
-
-    def setValue(self, v):
-        self.content = v
+        self.value = value    
 
     def forwardPass(self):
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(self.content)
+        pass
 
     def backwardPass(self):
         pass
 
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        raise Exception("Constant nodes cannot have in-edges")
-
 class Add(GraphNode):
+
+    def __init__(self, producers : List[GraphNode] = None):
+        super().__init__()
+        self.value = None
+        self.producers = producers    
+
+    def addProducer(self, p : GraphNode):
+        self.producers.append(p)
 
     def forwardPass(self):
         v = 0
-        for _, edge in self.inEdges.items():
-            v += edge.readFromEdge()
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
-        self.v = v
+        for p in self.producers:
+            v += p.getValue()
+        self.value = v
 
     def backwardPass(self):
         pass
 
 class PointwiseMul(GraphNode):
 
+    def __init__(self, producers : List[GraphNode] = None):
+        super().__init__()
+        self.value = None
+        self.producers = producers    
+
+    def addProducer(self, p : GraphNode):
+        self.producers.append(p)
+
     def forwardPass(self):
         v = 1
-        for _, edge in self.inEdges.items():
-            v *= edge.readFromEdge()
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
+        for p in self.producers:
+            v  = np.multiply(v, p.getValue())
+        self.value = v
 
     def backwardPass(self):
         pass
-
 
 class PointwiseDivide(GraphNode):
- 
-    def forwardPass(self):
-        if("numerator" not in self.inEdges or "denominator" not in self.inEdges):
-            raise Exception("PointwiseDivide is lacking a \"numerator\" or a \"denominator\" edge")
 
-        assert(len(self.inEdges) == 2)
-        v = np.divide(self.inEdges["numerator"].readFromEdge(), self.inEdges["denominator"].readFromEdge())
-     
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
+    def __init__(self, numerator : GraphNode = None, denominator : GraphNode = None):
+        super().__init__()
+        self.value = None
+        self.numerator = numerator
+        self.denominator = denominator 
+
+    def setNumerator(self, n : GraphNode):
+        self.numerator = n
+
+    def setDenominator(self, d : GraphNode):
+        self.denominator = d
+
+    def forwardPass(self):
+        self.value = np.divide(self.numerator.getValue(), self.denominator.getValue())
 
     def backwardPass(self):
-        pass
-
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        if(len(self.inEdges) == 2):
-            raise ValueError("PointwiseDivide node can only have 2 in-edges")
-        super().registerInEdgeBuffer(edge, name)       
-        
+        pass          
 
 class Square(GraphNode):
 
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.value = None
+        self.producer = producer   
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+
     def forwardPass(self):
-        assert(len(self.inEdges) == 1)
-        for _, edge in self.inEdges.items():
-            v = np.square(edge.readFromEdge())
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
+        self.value = np.square(self.producer.getValue())
 
     def backwardPass(self):
         pass
-
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        if(len(self.inEdges) != 0):
-            raise Exception("Log operation can only have one in-edge")
-        super().registerInEdgeBuffer(edge, name)
 
 class Log(GraphNode):
 
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.value = None
+        self.producer = producer   
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+
     def forwardPass(self):
-        assert(len(self.inEdges) == 1)
-        for _, edge in self.inEdges.items():
-            v = np.log(edge.readFromEdge())        
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
+        self.value = np.log(self.producer.getValue())
 
     def backwardPass(self):
         pass
-
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        if(len(self.inEdges) != 0):
-            raise Exception("Square operation can only have one in-edge")
-        super().registerInEdgeBuffer(edge, name)
 
 class Sin(GraphNode):
 
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.value = None
+        self.producer = producer   
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+
     def forwardPass(self):
-        assert(len(self.inEdges) == 1)
-        for _, edge in self.inEdges.items():
-            v = np.sin(edge.readFromEdge())        
-        for _, edge in self.outEdges.items():
-            edge.writeToEdge(v)
+        self.value = np.sin(self.producer.getValue())
 
     def backwardPass(self):
         pass
-
-    def registerInEdgeBuffer(self, edge: EdgeBuffer, name: str):
-        if(len(self.inEdges) != 0):
-            raise Exception("Sin operation can only have one in-edge")
-        super().registerInEdgeBuffer(edge, name)
