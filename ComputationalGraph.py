@@ -6,6 +6,7 @@ class ComputationalGraph():
     def __init__(self):
         self.nodeTable = {}
         self.edgeTable = {}
+        self.trainableNodes = []
         self.graphIterator = None
 
     def getNode(self, nodeName : str):
@@ -18,6 +19,8 @@ class ComputationalGraph():
             raise ValueError("A node named \"" + nodeName + "\" is already in the graph.")
 
         self.nodeTable[nodeName] = n
+        if(n.isTrainable()):
+            self.trainableNodes.append(n)
 
     def addEdge(self, sourceNode : str, endNode : str):
         if(sourceNode not in self.nodeTable.keys()):
@@ -40,3 +43,8 @@ class ComputationalGraph():
 
         for node in reversed(self.graphIterator):
             self.nodeTable[node].forwardPass()
+
+    def runBackwardPass(self):
+
+        for node in self.graphIterator:
+            self.nodeTable[node].backwardPass()

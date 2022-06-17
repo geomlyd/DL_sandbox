@@ -64,7 +64,9 @@ class Add(GraphNode):
         self.value = v
 
     def backwardPass(self):
-        pass
+        for p in self.producers:
+            p.receiveGradient(self.gradients)
+        
 
 class PointwiseMul(GraphNode):
 
@@ -83,6 +85,7 @@ class PointwiseMul(GraphNode):
         self.value = v
 
     def backwardPass(self):
+
         pass
 
 class PointwiseDivide(GraphNode):
@@ -117,8 +120,15 @@ class Square(GraphNode):
 
     def forwardPass(self):
         self.value = np.square(self.producer.getValue())
+        if(self.trackGradients):
+            self.cachedArg = self.producer.getValue()
 
     def backwardPass(self):
+        gradShape = self.gradients.shape
+        argShape = self.cachedArg.shape
+
+        
+        self.producer.receiveGradient()
         pass
 
 class Log(GraphNode):
