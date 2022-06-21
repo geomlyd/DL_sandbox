@@ -19,7 +19,7 @@ class ComputationalGraph():
             raise ValueError("A node named \"" + nodeName + "\" is already in the graph.")
 
         self.nodeTable[nodeName] = n
-        if(n.isTrainable()):
+        if(n.isTrainable):
             self.trainableNodes.append(n)
 
     def addEdge(self, sourceNode : str, endNode : str):

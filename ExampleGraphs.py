@@ -7,28 +7,31 @@ class X2logX_Graph():
         self.G = ComputationalGraph.ComputationalGraph()
 
         x = CommonNodes.InputNode()
-        sq = CommonNodes.Square()
-        log = CommonNodes.Log()
-        out = CommonNodes.OutputNode()
-        mul = CommonNodes.PointwiseMul()
+        sq = CommonNodes.Square(x)
+        _log = CommonNodes.Log(x)
+        mul = CommonNodes.PointwiseMul([sq, _log])
+        out = CommonNodes.OutputNode(mul)
+       
 
         self.G.addNode(x, "x")
         self.G.addNode(sq, "^2")
-        self.G.addNode(log, "log")
+        self.G.addNode(_log, "log")
         self.G.addNode(mul, "*")
         self.G.addNode(out, "output")
 
-        self.G.addEdge("x", "^2", "out", "in")
-        self.G.addEdge("x", "log", "out", "in")
-        self.G.addEdge("^2", "*", "in", "arg1")
-        self.G.addEdge("log", "*", "in", "arg2")
-        self.G.addEdge("*", "output", "in", "output")
+        self.G.addEdge("x", "^2")
+        self.G.addEdge("x", "log")
+        self.G.addEdge("^2", "*")
+        self.G.addEdge("log", "*")
+        self.G.addEdge("*", "output")
 
     def __call__(self, x):
-        self.G.getNode("x").setValue(x)
+        self.G.getNode("x").value = x
         self.G.runForwardPass()
-        outputDict = self.G.getNode("output").getValue()
-        return outputDict["output"]
+        self.G.runBackwardPass()
+        o = self.G.getNode("output").value
+        d = self.G.getNode("x").totalGradient
+        return o, d
 
 class InterestingGraph():
 
@@ -57,7 +60,9 @@ class InterestingGraph():
         self.G.addEdge("*", "output")       
 
     def __call__(self, x):
-        self.G.getNode("x").setValue(x)
+        self.G.getNode("x").value = x
         self.G.runForwardPass()
-        o = self.G.getNode("output").getValue()
-        return o     
+        self.G.runBackwardPass()
+        o = self.G.getNode("output").value
+        d = self.G.getNode("x").totalGradient
+        return o, d

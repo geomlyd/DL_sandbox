@@ -18,9 +18,10 @@ class GraphNode(ABC):
 
     def __init__(self, isTrainable=False, trackGradients=True):
         self.gradients = []
-        self.value = None
-        self.isTrainable=isTrainable
-        self.trackGradients=trackGradients
+        self.totalGradient = 0
+        self._value = None
+        self._isTrainable = isTrainable
+        self.trackGradients = trackGradients
         # self.inEdges = {}
         # self.outEdges = {}
 
@@ -34,16 +35,22 @@ class GraphNode(ABC):
 
     @property
     def isTrainable(self):
-        return self.isTrainable
+        return self._isTrainable
 
-    def getValue(self):
-        return self.value
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, v):
+        self._value = v
     
     def addToValue(self, toBeAdded):
-        self.value += toBeAdded
+        self._value += toBeAdded
 
     def receiveGradient(self, grad):
-        self.gradients.append(grad)
+        #self.gradients.append(grad)
+        self.totalGradient += grad
 
     def getGradient(self):
         return self.gradients

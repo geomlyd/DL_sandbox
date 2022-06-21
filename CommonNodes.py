@@ -1,3 +1,4 @@
+from functools import total_ordering
 from typing import List
 from torch import Graph
 from GraphNode import GraphNode
@@ -7,7 +8,6 @@ class InputNode(GraphNode):
 
     def __init__(self, value=None):
         super().__init__()
-        self.value = None
 
     def setValue(self, v):
         self.value = v
@@ -23,17 +23,16 @@ class OutputNode(GraphNode):
 
     def __init__(self, producer : GraphNode = None):
         super().__init__()
-        self.value = None
         self.producer = producer
 
     def setProducer(self, p : GraphNode):
         self.producer = p
 
     def forwardPass(self):
-        self.value = self.producer.getValue()
+        self.value = self.producer.value
 
     def backwardPass(self):
-        pass
+        self.producer.receiveGradient(1)
 
 class ConstantNode(GraphNode):
 
@@ -60,12 +59,12 @@ class Add(GraphNode):
     def forwardPass(self):
         v = 0
         for p in self.producers:
-            v += p.getValue()
+            v += p.value()
         self.value = v
 
     def backwardPass(self):
         for p in self.producers:
-            p.receiveGradient(self.gradients)
+            p.receiveGradient(self.totalGradient)
         
 
 class PointwiseMul(GraphNode):
@@ -81,12 +80,12 @@ class PointwiseMul(GraphNode):
     def forwardPass(self):
         v = 1
         for p in self.producers:
-            v  = np.multiply(v, p.getValue())
+            v  *= p.value
         self.value = v
 
     def backwardPass(self):
-
-        pass
+        for p in self.producers:
+            p.receiveGradient(self.totalGradient*np.divide(self.value, p.value))
 
 class PointwiseDivide(GraphNode):
 
@@ -103,10 +102,12 @@ class PointwiseDivide(GraphNode):
         self.denominator = d
 
     def forwardPass(self):
-        self.value = np.divide(self.numerator.getValue(), self.denominator.getValue())
+        self.value = np.divide(self.numerator.value, self.denominator.value)
 
     def backwardPass(self):
-        pass          
+        self.numerator.receiveGradient(np.divide(self.totalGradient, self.denominator.value))
+        self.denominator.receiveGradient(np.divide(self.totalGradient*(-self.numerator.value), 
+            self.denominator.value*self.denominator.value))          
 
 class Square(GraphNode):
 
@@ -119,17 +120,14 @@ class Square(GraphNode):
         self.producer = p
 
     def forwardPass(self):
-        self.value = np.square(self.producer.getValue())
-        if(self.trackGradients):
-            self.cachedArg = self.producer.getValue()
+        self.value = np.square(self.producer.value)
+        # if(self.trackGradients):
+        #     self.cachedArg = self.producer.value()
 
     def backwardPass(self):
-        gradShape = self.gradients.shape
-        argShape = self.cachedArg.shape
-
-        
-        self.producer.receiveGradient()
-        pass
+        #gradShape = self.gradients.shape
+        #argShape = self.cachedArg.shape
+        self.producer.receiveGradient(self.totalGradient*2*self.producer.value)
 
 class Log(GraphNode):
 
@@ -142,10 +140,10 @@ class Log(GraphNode):
         self.producer = p
 
     def forwardPass(self):
-        self.value = np.log(self.producer.getValue())
+        self.value = np.log(self.producer.value)
 
     def backwardPass(self):
-        pass
+        self.producer.receiveGradient(np.divide(self.totalGradient, self.producer.value))
 
 class Sin(GraphNode):
 
@@ -158,7 +156,8 @@ class Sin(GraphNode):
         self.producer = p
 
     def forwardPass(self):
-        self.value = np.sin(self.producer.getValue())
+        self.value = np.sin(self.producer.value)
 
     def backwardPass(self):
+        self.producer.receiveGradient(self.totalGradient*np.cos(self.producer.value))
         pass
