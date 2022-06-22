@@ -1,50 +1,54 @@
+from multiprocessing.sharedctypes import Value
 from GraphNode import GraphNode
 import graphlib
 
 class ComputationalGraph():
 
     def __init__(self):
-        self.nodeTable = {}
+        self.nameToNode = {}
+        self.nodeToName = {}
         self.edgeTable = {}
         self.trainableNodes = []
         self.graphIterator = None
+        self.topoSortUpToDate = False
 
     def getNode(self, nodeName : str):
-        if(nodeName not in self.nodeTable):
+        if(nodeName not in self.nameToNode):
             raise ValueError("No node named \"" + nodeName + "\" found in graph")
-        return self.nodeTable[nodeName]
+        return self.nameToNode[nodeName]
 
     def addNode(self, n : GraphNode, nodeName : str):
-        if(nodeName in self.nodeTable.keys()):
+        if(nodeName in self.nameToNode.keys()):
             raise ValueError("A node named \"" + nodeName + "\" is already in the graph.")
-
-        self.nodeTable[nodeName] = n
+        if(n in self.nodeToName.keys()):
+            raise ValueError("Node\"" + nodeName + "\" is already in the graph under the same or different name")
+        
+        self.topoSortUpToDate = False
+        self.nameToNode[nodeName] = n
+        self.nodeToName[n] = nodeName
         if(n.isTrainable):
             self.trainableNodes.append(n)
 
-    def addEdge(self, sourceNode : str, endNode : str):
-        if(sourceNode not in self.nodeTable.keys()):
-            raise ValueError("Graph has no node named \"" + sourceNode)
-        if(endNode not in self.nodeTable.keys()):
-            raise ValueError("Graph has no node named \"" + endNode)
-
-        if(sourceNode in self.edgeTable):
-            self.edgeTable[sourceNode].add(endNode)
-        else:
-            self.edgeTable[sourceNode] = set({endNode})
-        
-        try:
-            self.graphIterator = tuple(graphlib.TopologicalSorter(self.edgeTable).static_order())
-        except graphlib.CycleError:
-            print("Computational graph has a cycle")
-            exit()
-
     def runForwardPass(self):
+        if(not self.topoSortUpToDate):
+            for endNode in self.nodeToName.keys():
+                endNodeName = self.nodeToName[endNode]
+                for sourceNode in endNode.inEdges:
+                    sourceNodeName = self.nodeToName[sourceNode]
+                    if(sourceNodeName in self.edgeTable):
+                        self.edgeTable[sourceNodeName].add(endNodeName)
+                    else:
+                        self.edgeTable[sourceNodeName] = set({endNodeName})
+            try:
+                self.graphIterator = tuple(graphlib.TopologicalSorter(self.edgeTable).static_order())
+            except graphlib.CycleError:
+                raise Exception("Computational graph has a cycle")  
+            self.topoSortUpToDate = True         
 
-        for node in reversed(self.graphIterator):
-            self.nodeTable[node].forwardPass()
+        for nodeName in reversed(self.graphIterator):
+            self.nameToNode[nodeName].forwardPass()
 
     def runBackwardPass(self):
 
-        for node in self.graphIterator:
-            self.nodeTable[node].backwardPass()
+        for nodeName in self.graphIterator:
+            self.nameToNode[nodeName].backwardPass()

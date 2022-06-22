@@ -24,6 +24,7 @@ class OutputNode(GraphNode):
     def __init__(self, producer : GraphNode = None):
         super().__init__()
         self.producer = producer
+        self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p
@@ -52,6 +53,7 @@ class Add(GraphNode):
         super().__init__()
         self.value = None
         self.producers = producers    
+        self.registerInEdges(producers)
 
     def addProducer(self, p : GraphNode):
         self.producers.append(p)
@@ -73,6 +75,7 @@ class PointwiseMul(GraphNode):
         super().__init__()
         self.value = None
         self.producers = producers    
+        self.registerInEdges(producers)
 
     def addProducer(self, p : GraphNode):
         self.producers.append(p)
@@ -94,6 +97,7 @@ class PointwiseDivide(GraphNode):
         self.value = None
         self.numerator = numerator
         self.denominator = denominator 
+        self.registerInEdges([numerator, denominator])
 
     def setNumerator(self, n : GraphNode):
         self.numerator = n
@@ -115,6 +119,7 @@ class Square(GraphNode):
         super().__init__()
         self.value = None
         self.producer = producer   
+        self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p
@@ -135,6 +140,7 @@ class Log(GraphNode):
         super().__init__()
         self.value = None
         self.producer = producer   
+        self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p
@@ -151,6 +157,7 @@ class Sin(GraphNode):
         super().__init__()
         self.value = None
         self.producer = producer   
+        self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p

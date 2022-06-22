@@ -19,11 +19,6 @@ class X2logX_Graph():
         self.G.addNode(mul, "*")
         self.G.addNode(out, "output")
 
-        self.G.addEdge("x", "^2")
-        self.G.addEdge("x", "log")
-        self.G.addEdge("^2", "*")
-        self.G.addEdge("log", "*")
-        self.G.addEdge("*", "output")
 
     def __call__(self, x):
         self.G.getNode("x").value = x
@@ -51,13 +46,6 @@ class InterestingGraph():
         self.G.addNode(inv, "/")
         self.G.addNode(mul, "*")
         self.G.addNode(out, "output")        
-
-        self.G.addEdge("x", "/")
-        self.G.addEdge("1", "/")
-        self.G.addEdge("/", "sin")
-        self.G.addEdge("x", "*")
-        self.G.addEdge("sin", "*")
-        self.G.addEdge("*", "output")       
 
     def __call__(self, x):
         self.G.getNode("x").value = x

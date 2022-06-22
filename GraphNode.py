@@ -2,6 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, Any
 
+from torch import Graph
+
 # class EdgeBuffer():
 
 #     def __init__(self):
@@ -20,6 +22,7 @@ class GraphNode(ABC):
         self.gradients = []
         self.totalGradient = 0
         self._value = None
+        self._inEdges = []
         self._isTrainable = isTrainable
         self.trackGradients = trackGradients
         # self.inEdges = {}
@@ -58,6 +61,12 @@ class GraphNode(ABC):
     def setTrackGradients(self, trackGradients):
         self.trackGradients = trackGradients
 
+    def registerInEdges(self, sourceNodes : list[GraphNode]):
+        self._inEdges += sourceNodes
+
+    @property
+    def inEdges(self):
+        return self._inEdges
     
     # def registerInEdgeBuffer(self, edge : EdgeBuffer, name : str):
     #     if(name in self.inEdges.keys()):
