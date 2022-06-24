@@ -1,3 +1,4 @@
+from cmath import inf
 import CommonNodes
 import ComputationalGraph
 import numpy as np
@@ -55,6 +56,51 @@ class InterestingGraph():
         o = self.G.getNode("output").value
         d = self.G.getNode("x").totalGradient
         return o, d
+
+class LinearRegression():
+
+    def __init__(self, inputDim, optimizer):
+
+        self.G = ComputationalGraph.ComputationalGraph(optimizer=optimizer)
+
+        x = CommonNodes.InputNode()
+
+        y_groundTruth = CommonNodes.InputNode()
+        y_pred = CommonNodes.AffineTransformation(inputDim, 1, x)
+
+        diff = CommonNodes.Subtract(y_pred, y_groundTruth)
+        sq = CommonNodes.Square(diff)
+        lossNode = CommonNodes.ReduceSum(sq)
+        lossOut = CommonNodes.OutputNode(lossNode)
+
+        out = CommonNodes.OutputNode(y_pred)
+        out.trackGradients = False
+
+        self.G.addNode(out, "output")
+        self.G.addNode(y_groundTruth, "y_groundTruth")
+        self.G.addNode(y_pred, "y_pred")
+        self.G.addNode(x, "x")
+        self.G.addNode(diff, "-", trainOnly=True)
+        self.G.addNode(sq, "^2", trainOnly=True)
+        self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
+        self.G.addNode(lossOut, "loss", trainOnly=True)
+
+    def __call__(self, x):
+        self.G.getNode("x").value = x
+        self.G.runForwardPass(runTraining=False)
+        o = self.G.getNode("output").value
+        return o
+
+    def fit(self, x, targets, numEpochs):
+        l = inf
+        
+        for i in range(numEpochs):
+            self.G.getNode("x").value = x
+            self.G.getNode("y_groundTruth").value = targets
+            self.G.runForwardPass()
+            self.G.runBackwardPass()
+            l = self.G.getNode("loss").value
+            print("Iteration {0} : loss {1}".format(i, l))
 
 class Rotation():
 

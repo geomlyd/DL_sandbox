@@ -33,7 +33,8 @@ class OutputNode(GraphNode):
         self.value = self.producer.value
 
     def backwardPass(self):
-        self.producer.receiveGradient(1)
+        if(self.trackGradients):
+            self.producer.receiveGradient(1)
 
 class ConstantNode(GraphNode):
 
@@ -51,7 +52,6 @@ class Add(GraphNode):
 
     def __init__(self, producers : List[GraphNode] = None):
         super().__init__()
-        self.value = None
         self.producers = producers    
         self.registerInEdges(producers)
 
@@ -73,7 +73,6 @@ class PointwiseMul(GraphNode):
 
     def __init__(self, producers : List[GraphNode] = None):
         super().__init__()
-        self.value = None
         self.producers = producers    
         self.registerInEdges(producers)
 
@@ -94,7 +93,6 @@ class PointwiseDivide(GraphNode):
 
     def __init__(self, numerator : GraphNode = None, denominator : GraphNode = None):
         super().__init__()
-        self.value = None
         self.numerator = numerator
         self.denominator = denominator 
         self.registerInEdges([numerator, denominator])
@@ -113,11 +111,31 @@ class PointwiseDivide(GraphNode):
         self.denominator.receiveGradient(np.divide(self.totalGradient*(-self.numerator.value), 
             self.denominator.value*self.denominator.value))          
 
+class Subtract(GraphNode):
+
+    def __init__(self, subtractFrom : GraphNode = None, valueToSubtract : GraphNode = None):
+        super().__init__()
+        self.subtractFrom = subtractFrom
+        self.valueToSubtract = valueToSubtract 
+        self.registerInEdges([subtractFrom, valueToSubtract])
+
+    def setSubtractFrom(self, n : GraphNode):
+        self.subtractFrom = n
+
+    def setValueToSubtract(self, n : GraphNode):
+        self.setValueToSubtract = n
+
+    def forwardPass(self):
+        self.value = self.subtractFrom.value - self.valueToSubtract.value
+
+    def backwardPass(self):
+        self.subtractFrom.receiveGradient(self.totalGradient)
+        self.valueToSubtract.receiveGradient(-self.totalGradient)            
+
 class Square(GraphNode):
 
     def __init__(self, producer : GraphNode = None):
         super().__init__()
-        self.value = None
         self.producer = producer   
         self.registerInEdges([producer])
 
@@ -138,7 +156,6 @@ class Log(GraphNode):
 
     def __init__(self, producer : GraphNode = None):
         super().__init__()
-        self.value = None
         self.producer = producer   
         self.registerInEdges([producer])
 
@@ -155,7 +172,6 @@ class Sin(GraphNode):
 
     def __init__(self, producer : GraphNode = None):
         super().__init__()
-        self.value = None
         self.producer = producer   
         self.registerInEdges([producer])
 
@@ -174,7 +190,6 @@ class AffineTransformation(GraphNode):
     def __init__(self, inputDimension : int, outputDimension : int, producer : GraphNode = None, 
         W_init : np.array = None , b_init : np.array = None):        
         super().__init__(isTrainable=True)
-        self.value = None
         self.producer = producer   
         if(W_init is not None):
             if(W_init.shape != (inputDimension, outputDimension)):
@@ -194,11 +209,38 @@ class AffineTransformation(GraphNode):
         self.producer = p
 
     def forwardPass(self):
-        self.value = np.matmul(self.producer.value, self.W)+ self.b
+        v = self.producer.value
+        if(len(v.shape) == 1):
+            v = v[:, None]
+        self.value = np.squeeze(np.matmul(v, self.W)+ self.b)
+
+    def addToParamValues(self, paramStep):
+        self.W = self.W + paramStep[0:self.W.shape[0]*self.W.shape[1]].reshape(self.W.shape)
+        self.b = self.b + paramStep[self.W.shape[1]:]
 
     def backwardPass(self):
+        if(len(self.totalGradient.shape) == 1):
+            self.totalGradient = self.totalGradient[:, None]
         self.producer.receiveGradient(np.matmul(self.totalGradient, self.W.T))
 
         if(self.isTrainable):
-            self.paramGradients.append(np.matmul(self.producer.value.T, self.totalGradient))
-            self.paramGradients.append(np.sum(self.totalGradient, axis=0))
+            self.paramGradients = []
+            self.paramGradients.append((np.matmul(self.producer.value.T, self.totalGradient).flatten()))
+            self.paramGradients.append((np.sum(self.totalGradient, axis=0)))
+            self.paramGradients = np.array(self.paramGradients)
+
+class ReduceSum(GraphNode):
+
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.producer = producer
+        self.registerInEdges([producer])
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+
+    def forwardPass(self):
+        self.value = np.sum(self.producer.value)
+
+    def backwardPass(self):
+        self.producer.receiveGradient(self.totalGradient*np.ones(self.producer.value.shape))
