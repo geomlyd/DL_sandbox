@@ -1,5 +1,6 @@
 import CommonNodes
 import ComputationalGraph
+import numpy as np
 
 class X2logX_Graph():
 
@@ -54,3 +55,33 @@ class InterestingGraph():
         o = self.G.getNode("output").value
         d = self.G.getNode("x").totalGradient
         return o, d
+
+class Rotation():
+
+    def __init__(self, degrees) -> None:
+        self.G = ComputationalGraph.ComputationalGraph()
+
+        x = CommonNodes.InputNode()
+        radians = degrees*np.pi/180
+        rotMatrix = np.array([[np.cos(radians), -np.sin(radians)], [np.sin(radians), np.cos(radians)]])
+        rotMatrix = rotMatrix.T
+        rot = CommonNodes.AffineTransformation(2, 2, x,  rotMatrix, np.zeros(2))
+
+        out = CommonNodes.OutputNode(rot)
+
+        self.G.addNode(x, "x")
+        self.G.addNode(rot, "rot")
+        self.G.addNode(out, "output")
+
+
+    def setDegrees(self, deg):
+        radians = deg*np.pi/180
+        rotMatrix = np.array([[np.cos(radians), -np.sin(radians)], [np.sin(radians), np.cos(radians)]])
+        rotMatrix = rotMatrix.T
+        self.G.getNode("rot").W = rotMatrix
+
+    def __call__(self, x):
+        self.G.getNode("x").value = x
+        self.G.runForwardPass()
+        o = self.G.getNode("output").value
+        return o

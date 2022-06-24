@@ -25,6 +25,7 @@ class GraphNode(ABC):
         self._inEdges = []
         self._isTrainable = isTrainable
         self.trackGradients = trackGradients
+        self.paramGradients = []
         # self.inEdges = {}
         # self.outEdges = {}
 
@@ -55,7 +56,7 @@ class GraphNode(ABC):
         #self.gradients.append(grad)
         self.totalGradient += grad
 
-    def getGradient(self):
+    def getParamGradient(self):
         return self.gradients
     
     def setTrackGradients(self, trackGradients):

@@ -168,3 +168,37 @@ class Sin(GraphNode):
     def backwardPass(self):
         self.producer.receiveGradient(self.totalGradient*np.cos(self.producer.value))
         pass
+
+class AffineTransformation(GraphNode):
+
+    def __init__(self, inputDimension : int, outputDimension : int, producer : GraphNode = None, 
+        W_init : np.array = None , b_init : np.array = None):        
+        super().__init__(isTrainable=True)
+        self.value = None
+        self.producer = producer   
+        if(W_init is not None):
+            if(W_init.shape != (inputDimension, outputDimension)):
+                raise Exception("AffineTransformation node: W initializer does not match declared dimensions")
+            self.W = W_init
+        else:
+            self.W = np.zeros((inputDimension, outputDimension))
+        if(b_init is not None):
+            if(W_init.shape != (inputDimension, outputDimension)):
+                raise Exception("AffineTransformation node: b initializer does not match declared dimensions")
+            self.b = b_init
+        else:
+            self.b = np.zeros(outputDimension)
+        self.registerInEdges([producer])
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+
+    def forwardPass(self):
+        self.value = np.matmul(self.producer.value, self.W)+ self.b
+
+    def backwardPass(self):
+        self.producer.receiveGradient(np.matmul(self.totalGradient, self.W.T))
+
+        if(self.isTrainable):
+            self.paramGradients.append(np.matmul(self.producer.value.T, self.totalGradient))
+            self.paramGradients.append(np.sum(self.totalGradient, axis=0))
