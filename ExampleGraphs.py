@@ -1,4 +1,6 @@
 from cmath import inf
+
+from importlib_metadata import Pair
 import CommonNodes
 import ComputationalGraph
 import numpy as np
@@ -101,6 +103,76 @@ class LinearRegression():
             self.G.runBackwardPass()
             l = self.G.getNode("loss").value
             print("Iteration {0} : loss {1}".format(i, l))
+
+class FullyConnectedRegressor():
+
+    def __init__(self, layerDimensions : list[Pair[int]], optimizer):
+
+        self.G = ComputationalGraph.ComputationalGraph(optimizer=optimizer)
+
+        prevLayerDimensions = None
+        inputLayer = CommonNodes.InputNode()
+        self.G.addNode(inputLayer, "x")        
+        prevLayer = inputLayer
+
+        for layerIndex in range(len(layerDimensions)):
+            layerDims = layerDimensions[layerIndex]
+
+            if(layerIndex == len(layerDimensions) - 1 and layerDims[1] != 1):
+                print("Error: final layer must have output dimension of 1")
+                exit(-1)
+            if(prevLayerDimensions is not None and 
+                layerDims[0] != prevLayerDimensions[1]):
+                print("Error: layer {0} has an output size of {1}, but"
+                    "layer {2} has an input size of {3}".format(layerIndex - 1, 
+                        prevLayerDimensions[1], layerIndex, layerDims[0]))
+                exit(-1)
+
+            W_init = np.random.normal(0.0, np.sqrt(2/layerDims[0]), 
+                size=layerDims)
+
+            linear = CommonNodes.AffineTransformation(layerDims[0], layerDims[1],
+                prevLayer, W_init=W_init)
+            nonlinearity = CommonNodes.ReLU(linear)
+            
+            self.G.addNode(linear, "linear_" + str(layerIndex))
+            self.G.addNode(nonlinearity, "relu_" + str(layerIndex))
+            prevLayer = nonlinearity
+            prevLayerDimensions = layerDims
+
+        out = CommonNodes.OutputNode(nonlinearity)
+        out.trackGradients = False
+        self.G.addNode(out, "output")
+
+        y_groundTruth = CommonNodes.InputNode()
+        self.G.addNode(y_groundTruth, "y_groundTruth", trainOnly=True)
+
+        diff = CommonNodes.Subtract(nonlinearity, y_groundTruth)
+        sq = CommonNodes.Square(diff)
+        lossNode = CommonNodes.ReduceSum(sq)
+        lossOut = CommonNodes.OutputNode(lossNode)
+        self.G.addNode(diff, "-", trainOnly=True)
+        self.G.addNode(sq, "^2", trainOnly=True)
+        self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
+        self.G.addNode(lossOut, "loss", trainOnly=True)
+
+    def __call__(self, x):
+        self.G.getNode("x").value = x
+        self.G.runForwardPass(runTraining=False)
+        o = self.G.getNode("output").value
+        return o
+
+    def fit(self, x, targets, numEpochs):
+        l = inf
+        
+        for i in range(numEpochs):
+            self.G.getNode("x").value = x
+            self.G.getNode("y_groundTruth").value = targets
+            self.G.runForwardPass()
+            self.G.runBackwardPass()
+            l = self.G.getNode("loss").value
+            print("Iteration {0} : loss {1}".format(i, l))        
+
 
 class Rotation():
 

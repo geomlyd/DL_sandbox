@@ -183,7 +183,27 @@ class Sin(GraphNode):
 
     def backwardPass(self):
         self.producer.receiveGradient(self.totalGradient*np.cos(self.producer.value))
-        pass
+        
+class ReLU(GraphNode):
+
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.producer = producer
+        self.registerInEdges([producer])
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p   
+
+    def forwardPass(self):
+        v = self.producer.value
+        self.value = np.copy(v)
+        self.value[self.value < 0] = 0.01*self.value[self.value < 0]
+
+    def backwardPass(self):
+        g = np.zeros(self.totalGradient.shape) + 0.01
+        g[self.value > 0] = 1
+        self.producer.receiveGradient(g*self.totalGradient)
+
 
 class AffineTransformation(GraphNode):
 
@@ -194,7 +214,7 @@ class AffineTransformation(GraphNode):
         if(W_init is not None):
             if(W_init.shape != (inputDimension, outputDimension)):
                 raise Exception("AffineTransformation node: W initializer does not match declared dimensions")
-            self.W = W_init
+            self.W = W_init.copy()
         else:
             self.W = np.zeros((inputDimension, outputDimension))
         if(b_init is not None):
@@ -216,7 +236,7 @@ class AffineTransformation(GraphNode):
 
     def addToParamValues(self, paramStep):
         self.W = self.W + paramStep[0:self.W.shape[0]*self.W.shape[1]].reshape(self.W.shape)
-        self.b = self.b + paramStep[self.W.shape[1]:]
+        self.b = self.b + paramStep[self.W.shape[0]*self.W.shape[1]:]
 
     def backwardPass(self):
         if(len(self.totalGradient.shape) == 1):
@@ -227,7 +247,7 @@ class AffineTransformation(GraphNode):
             self.paramGradients = []
             self.paramGradients.append((np.matmul(self.producer.value.T, self.totalGradient).flatten()))
             self.paramGradients.append((np.sum(self.totalGradient, axis=0)))
-            self.paramGradients = np.array(self.paramGradients)
+            self.paramGradients = np.concatenate(self.paramGradients)
 
 class ReduceSum(GraphNode):
 

@@ -30,6 +30,6 @@ class Optimizer(ABC):
 
         #split the concatenated array in the indices that initial sub-array
         #sizes indicate, discard the last element since it'll be empty
-        unconcatenatedParams = np.split(step, arrayLengths)[:-1]
+        unconcatenatedParams = np.split(step, startingIndices)[:-1]
         return unconcatenatedParams
 
