@@ -3,7 +3,7 @@ from Optimizers import GradientDescentOptimizer
 import numpy as np
 import matplotlib.pyplot as plt
 
-opt = GradientDescentOptimizer(0.01)
+opt = GradientDescentOptimizer(0.001)
 G = ExampleGraphs.LinearRegression(1, opt)
 
 dataX = 3*np.random.random(20)
