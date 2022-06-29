@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from sys import settrace
 from typing import Dict, Any, List
 
 # class EdgeBuffer():
@@ -44,8 +45,12 @@ class GraphNode(ABC):
         return self._value
 
     @property
-    def inEdges(self):
-        return self._inEdges
+    def inEdges(self, e):
+        self._inEdges = e
+
+    @inEdges.setter
+    def inEdges(self, inEdges):
+        self._inEdges = inEdges
 
     @value.setter
     def value(self, v):

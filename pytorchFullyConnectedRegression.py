@@ -7,9 +7,9 @@ class Pytorch_Regressor(pl.LightningModule):
         super(Pytorch_Regressor, self).__init__()
 
         self.seq = torch.nn.Sequential(
-            torch.nn.Linear(1, 20),
+            torch.nn.Linear(1, 5),
             torch.nn.LeakyReLU(),
-            torch.nn.Linear(20, 1),
+            torch.nn.Linear(5, 1),
             torch.nn.LeakyReLU()
         )
 

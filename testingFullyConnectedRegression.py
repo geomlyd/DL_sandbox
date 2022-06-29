@@ -10,15 +10,15 @@ opt = GradientDescentOptimizer(0.001)
 G = ExampleGraphs.FullyConnectedRegressor([[1, 10], [10, 10], [10, 1]], opt)
 
 dataX = np.random.random(200) - 0.5
-slope = 3*np.random.random(1) - 1
-intercept = 0.5*np.random.random(1) - 2
-actualY = dataX*dataX #slope*dataX + intercept  #dataX*dataX#
+slope = np.random.random(1)
+intercept = np.random.random(1)
+actualY = dataX*dataX#
 #actualY += 0.3*np.random.random(actualY.shape)
 
 plt.figure()
 plt.scatter(dataX, actualY)
 
-model = "other"
+model = "mine"
 if(model == "mine"):
     G.fit(dataX, actualY, 500)
 

@@ -254,13 +254,40 @@ class ReduceSum(GraphNode):
     def __init__(self, producer : GraphNode = None):
         super().__init__()
         self.producer = producer
-        self.registerInEdges([producer])
+        if(producer is not None):
+            self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        if(p is not None):
+            self.registerInEdges([p])
 
     def forwardPass(self):
         self.value = np.sum(self.producer.value)
 
     def backwardPass(self):
         self.producer.receiveGradient(self.totalGradient*np.ones(self.producer.value.shape))
+
+class LogSoftmax(GraphNode):
+
+    def __init__(self, producer : GraphNode = None):
+        super().__init__()
+        self.producer = producer
+
+    def setProducer(self, p : GraphNode):
+        self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        if(p is not None):
+            self.registerInEdges([p])
+
+    def forwardPass(self):
+        expValue = np.exp(self.producer.value)
+        self.cache = expValue
+        self.value = self.producer.value - np.log(np.sum(expValue, axis=1))
+
+    def backwardPass(self):
+        #tmp = self.cache/np.sum(self.cache, axis=1)
+        #self.producer.receiveGradient(self.totalGradient*)
