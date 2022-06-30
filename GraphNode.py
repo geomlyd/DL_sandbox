@@ -45,8 +45,8 @@ class GraphNode(ABC):
         return self._value
 
     @property
-    def inEdges(self, e):
-        self._inEdges = e
+    def inEdges(self):
+        return self._inEdges
 
     @inEdges.setter
     def inEdges(self, inEdges):

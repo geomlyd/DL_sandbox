@@ -1,5 +1,6 @@
 from functools import total_ordering
 from typing import List
+from xmlrpc.client import boolean
 from torch import Graph
 from GraphNode import GraphNode
 import numpy as np
@@ -275,6 +276,8 @@ class LogSoftmax(GraphNode):
     def __init__(self, producer : GraphNode = None):
         super().__init__()
         self.producer = producer
+        if(producer is not None):
+            self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
         self.producer = p
@@ -286,8 +289,29 @@ class LogSoftmax(GraphNode):
     def forwardPass(self):
         expValue = np.exp(self.producer.value)
         self.cache = expValue
-        self.value = self.producer.value - np.log(np.sum(expValue, axis=1))
+        self.value = self.producer.value - np.log(np.sum(expValue, axis=1))[:, None]
 
     def backwardPass(self):
-        #tmp = self.cache/np.sum(self.cache, axis=1)
-        #self.producer.receiveGradient(self.totalGradient*)
+        dy_dx = self.cache/np.sum(self.cache, axis=1)[:, None]
+        dy_dx = 1- dy_dx.shape[1]*dy_dx
+        self.producer.receiveGradient(self.totalGradient*dy_dx)
+
+class NegativeLogLikelihoodLoss(GraphNode):
+
+    def __init__(self, logits : GraphNode = None, classes : GraphNode = None):
+        super().__init__()
+        self.logits = logits
+        self.classes = classes
+        self.registerInEdges([logits, classes])
+
+    def forwardPass(self):
+        booleanMask = False*np.ones(self.logits.value.shape)
+        booleanMask = booleanMask.astype(bool)
+        booleanMask[np.arange(booleanMask.shape[0]), self.classes.value.astype(int)] = True
+        self.booleanMask = booleanMask
+        self.value = np.sum(-self.logits.value[booleanMask])/self.classes.value.shape[0]
+
+    def backwardPass(self):
+        dy_dx = np.zeros(self.logits.value.shape)
+        dy_dx[self.booleanMask] = 1/self.classes.value.shape[0]
+        self.logits.receiveGradient(self.totalGradient*dy_dx)
