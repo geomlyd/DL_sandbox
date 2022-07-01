@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from multiprocessing.sharedctypes import Value
 from platform import node
 from GraphNode import GraphNode
@@ -90,4 +91,3 @@ class ComputationalGraph():
         
         self.clearGradients()
 
-        

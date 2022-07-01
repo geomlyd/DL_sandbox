@@ -1,4 +1,4 @@
-import ExampleGraphs
+import ExampleModels
 from Optimizers import GradientDescentOptimizer
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,12 +7,12 @@ import pytorch_lightning as pl
 import torch
 
 opt = GradientDescentOptimizer(0.001)
-G = ExampleGraphs.FullyConnectedRegressor([[1, 10], [10, 10], [10, 1]], opt)
+G = ExampleModels.FullyConnectedRegressor([[1, 10], [10, 10], [10, 1]])
 
 dataX = np.random.random(200) - 0.5
 slope = np.random.random(1)
 intercept = np.random.random(1)
-actualY = dataX*dataX#
+actualY = np.sin(dataX*dataX/0.1)#
 #actualY += 0.3*np.random.random(actualY.shape)
 
 plt.figure()
@@ -20,9 +20,7 @@ plt.scatter(dataX, actualY)
 
 model = "mine"
 if(model == "mine"):
-    G.fit(dataX, actualY, 500)
-
-
+    G.fit(dataX, actualY, 500, 10, opt)
 
     plotX = np.arange(-2, 2, 0.01)
     predictedY = G(plotX)

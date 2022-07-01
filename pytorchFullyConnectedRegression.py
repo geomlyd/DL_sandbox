@@ -7,10 +7,12 @@ class Pytorch_Regressor(pl.LightningModule):
         super(Pytorch_Regressor, self).__init__()
 
         self.seq = torch.nn.Sequential(
-            torch.nn.Linear(1, 5),
-            torch.nn.LeakyReLU(),
-            torch.nn.Linear(5, 1),
-            torch.nn.LeakyReLU()
+            torch.nn.Linear(1, 10),
+            torch.nn.ReLU(),
+            torch.nn.Linear(10, 10),
+            torch.nn.ReLU(),
+            torch.nn.Linear(10, 1),
+            torch.nn.ReLU()
         )
 
     def forward(self, x):
@@ -51,4 +53,4 @@ class Pytorch_Regressor_DataModule(pl.LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(self.d, self.d.x.shape[0])
+        return DataLoader(self.d, 10)
