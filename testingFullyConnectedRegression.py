@@ -18,8 +18,8 @@ actualY = np.sin(dataX*dataX/0.1)#
 plt.figure()
 plt.scatter(dataX, actualY)
 
-model = "mine"
-if(model == "mine"):
+whichModel = "mine"
+if(whichModel == "mine"):
     G.fit(dataX, actualY, 500, 10, opt)
 
     plotX = np.arange(-2, 2, 0.01)
