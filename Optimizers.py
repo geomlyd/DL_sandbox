@@ -7,5 +7,5 @@ class GradientDescentOptimizer(Optimizer):
         super().__init__(lr)
 
     def computeStep(self, params : np.array):
-        print(np.mean(np.abs(-self.learningRate*params)))
+        #print(np.mean(np.abs(-self.learningRate*params)))
         return -self.learningRate*params

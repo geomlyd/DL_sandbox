@@ -6,7 +6,7 @@ import ExampleModels
 import pytorchFullyConnectedRegression
 import torch
 
-opt = GradientDescentOptimizer(0.0001)
+opt = GradientDescentOptimizer(0.001)
 model = ExampleModels.FullyConnectedClassifier([[2, 50], [50, 50], [50, 2]])
 
 class1Data = 6*np.random.random(50) - 3
@@ -18,7 +18,7 @@ class2Data = np.column_stack((class2Data, class2Data*class2Data - 2 + 0.1*np.ran
 allData = np.vstack((class1Data, class2Data))
 allClasses = np.concatenate((np.zeros(class1Data.shape[0]), np.ones(class2Data.shape[0])))
 
-whichModel = "other"
+whichModel = "mine"
 
 plt.figure()
 plt.scatter(class1Data[:, 0], class1Data[:, 1], marker="x")
@@ -37,7 +37,7 @@ if(whichModel == "mine"):
 else:
     model = pytorchFullyConnectedRegression.Pytorch_FullyConnected(isClassifier=True, numClasses=2)
     dataModule = pytorchFullyConnectedRegression.Pytorch_Simple_DataModule(allData, allClasses)
-    trainer = pl.Trainer(gpus=0, max_epochs=200)
+    trainer = pl.Trainer(gpus=0, max_epochs=500)
     trainer.fit(model, dataModule)
 
     x, y = np.meshgrid(np.arange(-3, 3, 0.1), np.arange(-2, 9, 0.1))

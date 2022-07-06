@@ -31,7 +31,9 @@ class Pytorch_FullyConnected(pl.LightningModule):
         return loss(y, y_gt.long())
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.parameters(), lr=0.0001) #torch.optim.Adam(self.parameters())#
+        #optimizer = torch.optim.Adam(self.parameters())
+        optimizer = torch.optim.SGD(self.parameters(), lr=10)
+        #optimizer = torch.optim.SGD
         return optimizer
 
     def training_step(self, trainBatch):
@@ -59,4 +61,4 @@ class Pytorch_Simple_DataModule(pl.LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(self.d, 10)
+        return DataLoader(self.d, batch_size=10)

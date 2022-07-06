@@ -201,7 +201,7 @@ class ReLU(GraphNode):
         self.value[self.value < 0] = 0.01*self.value[self.value < 0]
 
     def backwardPass(self):
-        g = np.zeros(self.totalGradient.shape) + 0.01
+        g = np.zeros(self.totalGradient.shape) #+ 0.01
         g[self.value > 0] = 1
         self.producer.receiveGradient(g*self.totalGradient)
 
@@ -243,6 +243,7 @@ class AffineTransformation(GraphNode):
         if(len(self.totalGradient.shape) == 1):
             self.totalGradient = self.totalGradient[:, None]
         self.producer.receiveGradient(np.matmul(self.totalGradient, self.W.T))
+
 
         if(self.isTrainable):
             self.paramGradients = []
@@ -287,13 +288,15 @@ class LogSoftmax(GraphNode):
             self.registerInEdges([p])
 
     def forwardPass(self):
-        expValue = np.exp(self.producer.value)
-        self.cache = expValue
-        self.value = self.producer.value - np.log(np.sum(expValue, axis=1))[:, None]
+        self.cachedMaxVal = np.max(self.producer.value, axis=1)[:, None]
+        expValue = np.exp(self.producer.value - self.cachedMaxVal)
+        self.cache = expValue 
+        self.value = (self.producer.value - self.cachedMaxVal) - np.log(np.sum(expValue, axis=1))[:, None]
 
     def backwardPass(self):
         dy_dx = self.cache/np.sum(self.cache, axis=1)[:, None]
         dy_dx = 1- dy_dx.shape[1]*dy_dx
+        #print(dy_dx, self.cache)
         self.producer.receiveGradient(self.totalGradient*dy_dx)
 
 class NegativeLogLikelihoodLoss(GraphNode):
