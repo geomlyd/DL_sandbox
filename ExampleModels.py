@@ -54,8 +54,6 @@ class FullyConnectedClassifier(Model.Model):
         out.trackGradients = False
         self.G.addNode(out, "output")
 
-
-
     def loadInput(self, *args):
         self.G.getNode("x").value = args[0]
         self.G.getNode("y_groundTruth").value = args[1]
@@ -120,8 +118,6 @@ class FullyConnectedRegressor(Model.Model):
         self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
         self.G.addNode(lossOut, "loss", trainOnly=True)
 
-
-
     def loadInput(self, *args):
         self.G.getNode("x").value = args[0]
         self.G.getNode("y_groundTruth").value = args[1]
@@ -131,3 +127,42 @@ class FullyConnectedRegressor(Model.Model):
         self.G.runForwardPass(runTraining=False)
         o = self.G.getNode("output").value
         return o
+
+class LinearRegression(Model.Model):
+
+    def __init__(self, inputDim):
+
+        self.G = ComputationalGraph()
+        super().__init__(self.G)
+
+        inputLayer = CommonNodes.InputNode()
+        self.G.addNode(inputLayer, "x")       
+     
+        lin = CommonNodes.AffineTransformation(inputDim, 1, inputLayer)
+        self.G.addNode(lin, "linear") 
+
+        out = CommonNodes.OutputNode(lin)
+        out.trackGradients = False
+        self.G.addNode(out, "output")
+
+        y_groundTruth = CommonNodes.InputNode()
+        self.G.addNode(y_groundTruth, "y_groundTruth", trainOnly=True)
+
+        diff = CommonNodes.Subtract(lin, y_groundTruth)
+        sq = CommonNodes.Square(diff)
+        lossNode = CommonNodes.ReduceSum(sq)
+        lossOut = CommonNodes.OutputNode(lossNode)
+        self.G.addNode(diff, "-", trainOnly=True)
+        self.G.addNode(sq, "^2", trainOnly=True)
+        self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
+        self.G.addNode(lossOut, "loss", trainOnly=True)
+
+    def loadInput(self, *args):
+        self.G.getNode("x").value = args[0]
+        self.G.getNode("y_groundTruth").value = args[1]
+
+    def __call__(self, x):
+        self.G.getNode("x").value = x
+        self.G.runForwardPass(runTraining=False)
+        o = self.G.getNode("output").value
+        return o    

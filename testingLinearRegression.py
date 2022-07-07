@@ -1,24 +1,39 @@
-import ExampleGraphs
+from ExampleModels import LinearRegression
 from Optimizers import GradientDescentOptimizer
 import numpy as np
 import matplotlib.pyplot as plt
+from pytorchSimpleModels import Pytorch_LinearRegression, Pytorch_Simple_DataModule
+import pytorch_lightning as pl
+import torch
 
-opt = GradientDescentOptimizer(0.001)
-G = ExampleGraphs.LinearRegression(1, opt)
-
-dataX = 3*np.random.random(20)
+dataDim = 1
+trainingDataX = 3*np.random.random(20)
 slope = 3*np.random.random(1) - 1
 intercept = 4*np.random.random(1) - 2
-actualY = slope*dataX + intercept
-actualY += 0.3*np.random.random(actualY.shape) - 0.1
-G.fit(dataX, actualY, 200)
-
+trainingDataY = slope*trainingDataX + intercept
+trainingDataY += 0.3*np.random.random(trainingDataY.shape) - 0.1
 plt.figure()
-plt.scatter(dataX, actualY)
+plt.scatter(trainingDataX, trainingDataY)
 
+whichModel = "mine"
+batchSize = 10
+numEpochs = 200
+lr = 0.1
 
-plotX = np.arange(-5, 5, 0.2)
-predictedY = G(plotX)
+if(whichModel == "mine"):
+    opt = GradientDescentOptimizer(lr)
+    model = LinearRegression(dataDim)
+    model.fit(trainingDataX, trainingDataY, numEpochs, batchSize, opt)
+
+else:
+    model = Pytorch_LinearRegression(1, lr=lr)
+    dataModule = Pytorch_Simple_DataModule(trainingDataX, trainingDataY, batchSize)
+    trainer = pl.Trainer(gpus=0, max_epochs=numEpochs)
+    trainer.fit(model, dataModule)
+
+plotX = np.arange(-5, 5, 0.2) if model == "mine" else torch.arange(-5, 5, 0.2)
+predictedY = model(plotX)
+if(not model == "mine"):
+    predictedY = predictedY.detach().numpy()
 plt.plot(plotX, predictedY)
-
 plt.show()
