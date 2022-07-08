@@ -1,39 +1,38 @@
-import ExampleModels
+from ExampleModels import FullyConnectedRegressor
 from Optimizers import GradientDescentOptimizer
 import numpy as np
 import matplotlib.pyplot as plt
-import pytorchFullyConnectedRegression
+from pytorchSimpleModels import Pytorch_FullyConnectedRegressor, Pytorch_Simple_DataModule
 import pytorch_lightning as pl
 import torch
 
-opt = GradientDescentOptimizer(0.001)
-G = ExampleModels.FullyConnectedRegressor([[1, 10], [10, 10], [10, 1]])
-
-dataX = np.random.random(200) - 0.5
-slope = np.random.random(1)
-intercept = np.random.random(1)
-actualY = np.sin(dataX*dataX/0.1)#
-#actualY += 0.3*np.random.random(actualY.shape)
-
+dataDim = 1
+trainingDataX = 2*np.random.random(200) - 1
+trainingDataY = 1/2*(1 + np.cos(trainingDataX*2*np.pi))#slope*trainingDataX + intercept
+trainingDataY += 0.01*np.random.random(trainingDataY.shape)
 plt.figure()
-plt.scatter(dataX, actualY)
+plt.scatter(trainingDataX, trainingDataY)
 
 whichModel = "mine"
+batchSize = 2
+numEpochs = 200
+lr = 0.01
+layerDims = [[1, 200], [200, 1]]
+
 if(whichModel == "mine"):
-    G.fit(dataX, actualY, 500, 10, opt)
+    opt = GradientDescentOptimizer(lr)
+    model = FullyConnectedRegressor(layerDims)
+    model.fit(trainingDataX, trainingDataY, numEpochs, batchSize, opt)
 
-    plotX = np.arange(-2, 2, 0.01)
-    predictedY = G(plotX)
-    plt.plot(plotX, predictedY)
-
-    plt.show()
 else:
-    model = pytorchFullyConnectedRegression.Pytorch_Regressor()
-    dataModule = pytorchFullyConnectedRegression.Pytorch_Regressor_DataModule(dataX, actualY)
-    trainer = pl.Trainer(gpus=0, max_epochs=200)
+    model = Pytorch_FullyConnectedRegressor(layerDims, lr=lr)
+    dataModule = Pytorch_Simple_DataModule(trainingDataX, trainingDataY, batchSize)
+    trainer = pl.Trainer(gpus=0, max_epochs=numEpochs)
     trainer.fit(model, dataModule)
 
-    plotX = np.arange(-2, 2, 0.01)
-    predictedY = model(torch.Tensor(plotX[:, None]))
-    plt.plot(plotX, predictedY.detach().numpy())
-    plt.show()
+plotX = np.arange(-1, 1, 0.01) if model == "mine" else torch.arange(-1, 1, 0.01)
+predictedY = model(plotX)
+if(not whichModel == "mine"):
+    predictedY = predictedY.detach().numpy()
+plt.plot(plotX, predictedY)
+plt.show()

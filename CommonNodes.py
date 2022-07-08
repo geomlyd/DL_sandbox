@@ -251,7 +251,7 @@ class AffineTransformation(GraphNode):
             self.paramGradients.append((np.sum(self.totalGradient, axis=0)))
             self.paramGradients = np.concatenate(self.paramGradients)
 
-class ReduceSum(GraphNode):
+class ReduceMean(GraphNode):
 
     def __init__(self, producer : GraphNode = None):
         super().__init__()
@@ -267,10 +267,11 @@ class ReduceSum(GraphNode):
             self.registerInEdges([p])
 
     def forwardPass(self):
-        self.value = np.sum(self.producer.value)
+        self.value = np.sum(self.producer.value)/self.producer.value.shape[0]
 
     def backwardPass(self):
-        self.producer.receiveGradient(self.totalGradient*np.ones(self.producer.value.shape))
+        self.producer.receiveGradient(self.totalGradient*
+            np.ones(self.producer.value.shape)/self.producer.value.shape[0])
 
 class LogSoftmax(GraphNode):
 

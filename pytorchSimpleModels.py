@@ -42,7 +42,7 @@ class Pytorch_FullyConnectedClassifier(pl.LightningModule):
         return loss
 
 class Pytorch_FullyConnectedRegressor(pl.LightningModule):
-    def __init__(self, layerDimensions : list[Pair[int]]):
+    def __init__(self, layerDimensions : list[Pair[int]], lr):
 
 
         super(Pytorch_FullyConnectedRegressor, self).__init__()
@@ -55,10 +55,11 @@ class Pytorch_FullyConnectedRegressor(pl.LightningModule):
             self.seq = torch.nn.Sequential(self.seq, 
                 torch.nn.Linear(layerDimensions[i][0], layerDimensions[i][1]),
                 torch.nn.ReLU())
+        self.lr = lr
         
     def forward(self, x):
         
-        return self.seq(x)
+        return self.seq(x if len(x.shape) > 1 else x[:, None]).squeeze()
 
     def loss(self, y, y_gt):
 
@@ -67,7 +68,7 @@ class Pytorch_FullyConnectedRegressor(pl.LightningModule):
 
     def configure_optimizers(self):
         #optimizer = torch.optim.Adam(self.parameters())
-        optimizer = torch.optim.SGD(self.parameters(), lr=10)
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr)
         #optimizer = torch.optim.SGD
         return optimizer
 

@@ -111,7 +111,7 @@ class FullyConnectedRegressor(Model.Model):
 
         diff = CommonNodes.Subtract(nonlinearity, y_groundTruth)
         sq = CommonNodes.Square(diff)
-        lossNode = CommonNodes.ReduceSum(sq)
+        lossNode = CommonNodes.ReduceMean(sq)
         lossOut = CommonNodes.OutputNode(lossNode)
         self.G.addNode(diff, "-", trainOnly=True)
         self.G.addNode(sq, "^2", trainOnly=True)
@@ -150,7 +150,7 @@ class LinearRegression(Model.Model):
 
         diff = CommonNodes.Subtract(lin, y_groundTruth)
         sq = CommonNodes.Square(diff)
-        lossNode = CommonNodes.ReduceSum(sq)
+        lossNode = CommonNodes.ReduceMean(sq)
         lossOut = CommonNodes.OutputNode(lossNode)
         self.G.addNode(diff, "-", trainOnly=True)
         self.G.addNode(sq, "^2", trainOnly=True)
