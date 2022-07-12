@@ -62,7 +62,7 @@ class FullyConnectedClassifier(Model.Model):
         self.G.getNode("x").value = x
         self.G.runForwardPass(runTraining=False)
         o = self.G.getNode("output").value
-        return np.argmax(o, axis=1)
+        return o#np.argmax(o, axis=1)
 
 
 class FullyConnectedRegressor(Model.Model):
@@ -90,11 +90,12 @@ class FullyConnectedRegressor(Model.Model):
                         prevLayerDimensions[1], layerIndex, layerDims[0]))
                 exit(-1)
 
-            W_init = np.random.normal(0.0, np.sqrt(2/layerDims[0]), 
+            W_init = np.random.uniform(-np.sqrt(1/layerDims[1]), np.sqrt(1/layerDims[1]), 
                 size=layerDims)
+            b_init = np.random.uniform(-np.sqrt(1/layerDims[1]), np.sqrt(1/layerDims[1]), layerDims[1])
 
             linear = CommonNodes.AffineTransformation(layerDims[0], layerDims[1],
-                prevLayer, W_init=W_init)
+                prevLayer, W_init=W_init, b_init=b_init)
             nonlinearity = CommonNodes.ReLU(linear)
             
             self.G.addNode(linear, "linear_" + str(layerIndex))

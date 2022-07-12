@@ -198,7 +198,7 @@ class ReLU(GraphNode):
     def forwardPass(self):
         v = self.producer.value
         self.value = np.copy(v)
-        self.value[self.value < 0] = 0.01*self.value[self.value < 0]
+        self.value[self.value < 0] = 0#0.01*self.value[self.value < 0]
 
     def backwardPass(self):
         g = np.zeros(self.totalGradient.shape) #+ 0.01

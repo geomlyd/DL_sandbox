@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from importlib_metadata import Pair
 
 class Pytorch_FullyConnectedClassifier(pl.LightningModule):
-    def __init__(self, layerDimensions : list[Pair[int]]):
+    def __init__(self, layerDimensions : list[Pair[int]], lr):
 
 
         super(Pytorch_FullyConnectedClassifier, self).__init__()
@@ -19,6 +19,7 @@ class Pytorch_FullyConnectedClassifier(pl.LightningModule):
                 torch.nn.ReLU())
         
         self.seq = torch.nn.Sequential(self.seq, torch.nn.LogSoftmax(dim=1))
+        self.lr = lr
 
     def forward(self, x):
         
@@ -31,7 +32,7 @@ class Pytorch_FullyConnectedClassifier(pl.LightningModule):
 
     def configure_optimizers(self):
         #optimizer = torch.optim.Adam(self.parameters())
-        optimizer = torch.optim.SGD(self.parameters(), lr=10)
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.lr)
         #optimizer = torch.optim.SGD
         return optimizer
 

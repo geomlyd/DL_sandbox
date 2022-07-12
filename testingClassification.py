@@ -2,55 +2,59 @@ from Optimizers import GradientDescentOptimizer
 import numpy as np
 import matplotlib.pyplot as plt
 import pytorch_lightning as pl
-import ExampleModels
-import pytorchFullyConnectedRegression
+from ExampleModels import FullyConnectedClassifier
+from pytorchSimpleModels import Pytorch_FullyConnectedClassifier, Pytorch_Simple_DataModule
 import torch
 
-opt = GradientDescentOptimizer(0.001)
-model = ExampleModels.FullyConnectedClassifier([[2, 50], [50, 50], [50, 2]])
+class1Data = np.random.random(100) - 1/2
+class1Data = np.column_stack((class1Data, 2*class1Data*class1Data + 0.1*np.random.random(class1Data.shape[0])))
 
-class1Data = 6*np.random.random(50) - 3
-class1Data = np.column_stack((class1Data, class1Data*class1Data + 0.1*np.random.random(50)))
-
-class2Data = 6*np.random.random(50) - 3
-class2Data = np.column_stack((class2Data, class2Data*class2Data - 2 + 0.1*np.random.random(50)))
+class2Data = np.random.random(100) - 1/2
+class2Data = np.column_stack((class2Data, class2Data*class2Data - 0.15 + 0.1*np.random.random(class1Data.shape[0])))
 
 allData = np.vstack((class1Data, class2Data))
 allClasses = np.concatenate((np.zeros(class1Data.shape[0]), np.ones(class2Data.shape[0])))
 
 whichModel = "mine"
+batchSize = 200
+numEpochs = 500
+lr = 0.001
+layerDims = [[2, 200], [200, 2]]
 
-plt.figure()
-plt.scatter(class1Data[:, 0], class1Data[:, 1], marker="x")
-plt.scatter(class2Data[:, 0], class2Data[:, 1], marker="o")
 if(whichModel == "mine"):
-    model.fit(allData, allClasses, 200, 10, opt)
-
-
-    x, y = np.meshgrid(np.arange(-3, 3, 0.1), np.arange(-2, 9, 0.1))
-    points = np.vstack((x.ravel(), y.ravel())).T
-    cl = model(points)
-    cl1points = points[cl == 0, :]
-    cl2points = points[cl == 1, :]
-    plt.scatter(cl1points[:, 0], cl1points[:, 1], marker="x")
-    plt.scatter(cl2points[:, 0], cl2points[:, 1], marker="o")
+    opt = GradientDescentOptimizer(lr)
+    model = FullyConnectedClassifier(layerDims)
+    model.fit(allData, allClasses, numEpochs, batchSize, opt)
 else:
-    model = pytorchFullyConnectedRegression.Pytorch_FullyConnected(isClassifier=True, numClasses=2)
-    dataModule = pytorchFullyConnectedRegression.Pytorch_Simple_DataModule(allData, allClasses)
-    trainer = pl.Trainer(gpus=0, max_epochs=500)
+    model = Pytorch_FullyConnectedClassifier(layerDims, lr=lr)
+    dataModule = Pytorch_Simple_DataModule(allData, allClasses, batchSize)
+    trainer = pl.Trainer(gpus=0, max_epochs=numEpochs)
     trainer.fit(model, dataModule)
 
-    x, y = np.meshgrid(np.arange(-3, 3, 0.1), np.arange(-2, 9, 0.1))
-    points = np.vstack((x.ravel(), y.ravel())).T
-    plotX = np.arange(-2, 2, 0.01)
-    cl = model(torch.Tensor(points)).detach().numpy()
-    cl = np.argmax(cl, axis=1)
-    cl1points = points[cl == 0, :]
-    cl2points = points[cl == 1, :]
-    plt.scatter(cl1points[:, 0], cl1points[:, 1], marker="x")
-    plt.scatter(cl2points[:, 0], cl2points[:, 1], marker="o")    
-    
+xRange = np.arange(np.min(allData[:, 0]) - 0.1, np.max(allData[:, 0]) + 0.1, 0.01)
+yRange = np.arange(np.min(allData[:, 1]) - 0.1, np.max(allData[:, 1]) + 0.1, 0.01)
+plotX, plotY = np.meshgrid(xRange, yRange)
+plotXY = np.vstack([plotX.ravel(), plotY.ravel()])
+plotXY = plotXY.T
 
+if(not whichModel == "mine"):
+    plotXY = torch.tensor(plotXY).float()
+
+predictedClass = model(plotXY)
+if(not whichModel == "mine"):
+    predictedClass = predictedClass.detach().numpy()
+    plotXY = plotXY.detach().numpy()
+predictedClass = np.argmax(predictedClass, axis=1)
+predictedClass = np.reshape(predictedClass.T, (yRange.shape[0], xRange.shape[0]))
+plt.figure()
+plt.contourf(xRange, yRange, predictedClass)
+
+plt.scatter(class1Data[:, 0], class1Data[:, 1], marker='x')
+plt.scatter(class2Data[:, 0], class2Data[:, 1], marker='o')
+#plt.scatter(plotXY[predictedClass == 0, 0], plotXY[predictedClass == 0, 1], marker='.', color='black')
+#plt.scatter(plotXY[predictedClass == 1, 0], plotXY[predictedClass == 1, 1], marker='.', color='white')
+#plotX = np.arange(-1, 1, 0.01) if model == "mine" else torch.arange(-1, 1, 0.01)
+#predictedY = model(plotX)
 plt.show()
 
 
