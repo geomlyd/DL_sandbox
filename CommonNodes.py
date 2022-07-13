@@ -9,9 +9,10 @@ class InputNode(GraphNode):
 
     def __init__(self, value=None):
         super().__init__()
+        self._value = value
 
     def setValue(self, v):
-        self.value = v
+        self._value = v
 
     def forwardPass(self):
         pass
@@ -267,11 +268,11 @@ class ReduceMean(GraphNode):
             self.registerInEdges([p])
 
     def forwardPass(self):
-        self.value = np.sum(self.producer.value)/self.producer.value.shape[0]
+        self.value = np.sum(self.producer.value)/self.producer.value.size
 
     def backwardPass(self):
         self.producer.receiveGradient(self.totalGradient*
-            np.ones(self.producer.value.shape)/self.producer.value.shape[0])
+            np.ones(self.producer.value.shape)/self.producer.value.size)
 
 class LogSoftmax(GraphNode):
 
@@ -295,10 +296,8 @@ class LogSoftmax(GraphNode):
         self.value = (self.producer.value - self.cachedMaxVal) - np.log(np.sum(expValue, axis=1))[:, None]
 
     def backwardPass(self):
-        dy_dx = self.cache/np.sum(self.cache, axis=1)[:, None]
-        dy_dx = 1- dy_dx.shape[1]*dy_dx
-        #print(dy_dx, self.cache)
-        self.producer.receiveGradient(self.totalGradient*dy_dx)
+        tmp = self.cache/np.sum(self.cache, axis=1)[:, None]
+        self.producer.receiveGradient(self.totalGradient - tmp*np.sum(self.totalGradient, axis=1)[:, None])
 
 class NegativeLogLikelihoodLoss(GraphNode):
 
@@ -317,5 +316,5 @@ class NegativeLogLikelihoodLoss(GraphNode):
 
     def backwardPass(self):
         dy_dx = np.zeros(self.logits.value.shape)
-        dy_dx[self.booleanMask] = 1/self.classes.value.shape[0]
+        dy_dx[self.booleanMask] = -1/self.classes.value.shape[0]
         self.logits.receiveGradient(self.totalGradient*dy_dx)

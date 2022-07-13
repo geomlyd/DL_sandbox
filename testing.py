@@ -1,23 +1,34 @@
-import ExampleGraphs
+import ComputationalGraph
+import CommonNodes
 import numpy as np
-import matplotlib.pyplot as plt
+import torch 
 
-G = ExampleGraphs.InterestingGraph()
+G = ComputationalGraph.ComputationalGraph()
 
-xRange = np.arange(-1.5, 1.5, 0.001)
-yRange, d = G(xRange)
-pos = np.random.randint(0, xRange.shape[0], size=5)
+v = np.array([[1, 2, 3], [4, 5, 6]])
+i = CommonNodes.InputNode(v)
+c = CommonNodes.InputNode(np.array([1, 2]))
 
-xToDiff = xRange[pos]
-yVal = yRange[pos]
-slopes = d[pos]
+s = CommonNodes.LogSoftmax(i)
+l = CommonNodes.NegativeLogLikelihoodLoss(s, c)
+o = CommonNodes.OutputNode(l)
 
-plt.figure()
-plt.plot(xRange, yRange)
-for i in range(pos.shape[0]):
-    print(i)
-    plt.scatter(xToDiff[i], yVal[i], marker='x', color='red')
-    x = np.arange(xToDiff[i] - 0.2, xToDiff[i] + 0.2, 0.1)
-    y = x*slopes[i] + (yVal[i] - slopes[i]*xToDiff[i])
-    plt.plot(x, y, color='green')
-plt.show()
+G.addNode(i, "input")
+G.addNode(c, "classes")
+G.addNode(s, "logsoftmax")
+G.addNode(l, "nll")
+G.addNode(o, "out")
+
+G.runForwardPass()
+G.runBackwardPass()
+print(o.value, i.totalGradient)
+
+x = torch.tensor(v).float()
+cc = torch.tensor(np.array([1, 2]))
+x.requires_grad = True
+y = torch.nn.LogSoftmax(dim=1)
+z = torch.nn.NLLLoss()
+w = z(y(x), cc)
+w.backward()
+print(w, x.grad)
+#z = torch.mean(y, dim = )

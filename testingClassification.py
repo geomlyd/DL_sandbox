@@ -16,9 +16,9 @@ allData = np.vstack((class1Data, class2Data))
 allClasses = np.concatenate((np.zeros(class1Data.shape[0]), np.ones(class2Data.shape[0])))
 
 whichModel = "mine"
-batchSize = 200
+batchSize = 100
 numEpochs = 500
-lr = 0.001
+lr = 0.1
 layerDims = [[2, 200], [200, 2]]
 
 if(whichModel == "mine"):
