@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from pytorchSimpleModels import Pytorch_FullyConnectedRegressor, Pytorch_Simple_DataModule
 import pytorch_lightning as pl
 import torch
+import ExampleDatasets
 
 dataDim = 1
 trainingDataX = 2*np.random.random(200) - 1
@@ -22,7 +23,8 @@ layerDims = [[1, 200], [200, 1]]
 if(whichModel == "mine"):
     opt = GradientDescentOptimizer(lr)
     model = FullyConnectedRegressor(layerDims)
-    model.fit(trainingDataX, trainingDataY, numEpochs, batchSize, opt)
+    dataset = ExampleDatasets.SimpleDataset(trainingDataX, trainingDataY)
+    model.fit(dataset, numEpochs, batchSize, opt)
 
 else:
     model = Pytorch_FullyConnectedRegressor(layerDims, lr=lr)

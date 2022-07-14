@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from ExampleModels import FullyConnectedClassifier
 from pytorchSimpleModels import Pytorch_FullyConnectedClassifier, Pytorch_Simple_DataModule
 import torch
+import ExampleDatasets
 
 class1Data = np.random.random(100) - 1/2
 class1Data = np.column_stack((class1Data, 2*class1Data*class1Data + 0.1*np.random.random(class1Data.shape[0])))
@@ -23,8 +24,9 @@ layerDims = [[2, 200], [200, 2]]
 
 if(whichModel == "mine"):
     opt = GradientDescentOptimizer(lr)
+    dataset = ExampleDatasets.SimpleDataset(allData, allClasses)
     model = FullyConnectedClassifier(layerDims)
-    model.fit(allData, allClasses, numEpochs, batchSize, opt)
+    model.fit(dataset, numEpochs, batchSize, opt)
 else:
     model = Pytorch_FullyConnectedClassifier(layerDims, lr=lr)
     dataModule = Pytorch_Simple_DataModule(allData, allClasses, batchSize)

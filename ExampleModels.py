@@ -1,3 +1,4 @@
+from typing import Tuple
 from ComputationalGraph import ComputationalGraph
 import Model
 import numpy as np
@@ -54,9 +55,9 @@ class FullyConnectedClassifier(Model.Model):
         out.trackGradients = False
         self.G.addNode(out, "output")
 
-    def loadInput(self, *args):
-        self.G.getNode("x").value = args[0]
-        self.G.getNode("y_groundTruth").value = args[1]
+    def loadInput(self, input: Tuple):
+        self.G.getNode("x").value = input[0]
+        self.G.getNode("y_groundTruth").value = input[1]
 
     def __call__(self, x):
         self.G.getNode("x").value = x
@@ -119,9 +120,9 @@ class FullyConnectedRegressor(Model.Model):
         self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
         self.G.addNode(lossOut, "loss", trainOnly=True)
 
-    def loadInput(self, *args):
-        self.G.getNode("x").value = args[0]
-        self.G.getNode("y_groundTruth").value = args[1]
+    def loadInput(self, input : Tuple):
+        self.G.getNode("x").value = input[0]
+        self.G.getNode("y_groundTruth").value = input[1]
 
     def __call__(self, x):
         self.G.getNode("x").value = x
@@ -158,9 +159,9 @@ class LinearRegression(Model.Model):
         self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
         self.G.addNode(lossOut, "loss", trainOnly=True)
 
-    def loadInput(self, *args):
-        self.G.getNode("x").value = args[0]
-        self.G.getNode("y_groundTruth").value = args[1]
+    def loadInput(self, input : Tuple):
+        self.G.getNode("x").value = input[0]
+        self.G.getNode("y_groundTruth").value = input[1]
 
     def __call__(self, x):
         self.G.getNode("x").value = x
