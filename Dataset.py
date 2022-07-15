@@ -2,10 +2,10 @@
 
 
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import numpy as np
 
-class Dataset():
+class Dataset(ABC):
 
     @abstractmethod
     def __len__(self): 

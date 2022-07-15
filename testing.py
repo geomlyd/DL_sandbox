@@ -2,6 +2,8 @@ import ComputationalGraph
 import CommonNodes
 import numpy as np
 import torch 
+import ExampleDatasets
+import torchvision.datasets as datasets
 
 G = ComputationalGraph.ComputationalGraph()
 
@@ -32,3 +34,6 @@ w = z(y(x), cc)
 w.backward()
 print(w, x.grad)
 #z = torch.mean(y, dim = )
+
+d = ExampleDatasets.MNISTDataset("./test")
+e = datasets.MNIST("./test2", download=True, train=True)
