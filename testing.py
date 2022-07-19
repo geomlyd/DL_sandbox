@@ -36,4 +36,4 @@ print(w, x.grad)
 #z = torch.mean(y, dim = )
 
 d = ExampleDatasets.MNISTDataset("./test")
-e = datasets.MNIST("./test2", download=True, train=True)
+#e = datasets.MNIST("./test2", download=True, train=True)
