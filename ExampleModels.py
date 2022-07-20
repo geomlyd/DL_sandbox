@@ -56,11 +56,11 @@ class FullyConnectedClassifier(Model.Model):
         self.G.addNode(out, "output")
 
     def loadInput(self, input: Tuple):
-        self.G.getNode("x").value = input[0]
+        self.G.getNode("x").value = np.reshape(input[0], (-1, 784))
         self.G.getNode("y_groundTruth").value = input[1]
 
     def __call__(self, x):
-        self.G.getNode("x").value = x
+        self.G.getNode("x").value = np.reshape(x, (-1, 784))
         self.G.runForwardPass(runTraining=False)
         o = self.G.getNode("output").value
         return o#np.argmax(o, axis=1)

@@ -100,10 +100,12 @@ class MNISTDataset(Dataset):
         return self.testingLabels.shape[0]
 
     def getTrainingDataFromIndices(self, ind: np.array):
-        return self.trainingData[ind, :, :] if self.transform is None else self.transform(self.trainingData[ind, :, :])
+        return (self.trainingData[ind, :, :] if self.transform is None else self.transform(self.trainingData[ind, :, :]),
+            self.trainingLabels[ind])
 
     def getValidationDataFromIndices(self, ind: np.array):
         return None
 
     def getTestDataFromIndices(self, ind: np.array):   
-        return self.testingData[ind, :, :] if self.transform is None else self.transform(self.testingData[ind, :, :])
+        return (self.testingData[ind, :, :] if self.transform is None else self.transform(self.testingData[ind, :, :]),
+            self.testingLabels[ind])

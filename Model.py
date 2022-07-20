@@ -31,7 +31,7 @@ class Model():
                 self.loadInput(dataset.getTrainingDataFromIndices(batchIndices))
                 self.G.runForwardPass()
                 self.G.runBackwardPass()
-                print(self.G.getNode("loss").value)
+            print("Epoch: {0}, loss: {1}".format(i, self.G.getNode("loss").value))
 
     @abstractmethod
     def loadInput(self, input : Tuple):

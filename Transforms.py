@@ -1,4 +1,5 @@
 from typing import List
+import numpy as np
 from Transform import Transform
 
 
@@ -13,6 +14,17 @@ class Compose(Transform):
             y = t(y)
         return y
 
-# class Normalize(Transform):
+class NormalizeImage(Transform):
 
-#     def __init__(self, )
+    def __init__(self, channelMeans : np.array, channelStds : np.array):
+        self.channelMeans = np.array(channelMeans)
+        self.channelStds = np.array(channelStds)
+
+        if(len(self.channelMeans.shape) == 0):
+            self.channelMeans = self.channelMeans[None]
+        if(len(self.channelStds.shape) == 0):
+            self.channelStds = self.channelStds[None]
+        
+
+    def __call__(self, x):
+        return (x - self.channelMeans[:, None, None])/self.channelStds[:, None, None]
