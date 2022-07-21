@@ -1,6 +1,6 @@
 from abc import ABC, abstractclassmethod, abstractmethod
 
-from typing import Tuple
+from typing import Tuple, List, Any
 import Optimizer
 from ComputationalGraph import ComputationalGraph
 import numpy as np
@@ -11,7 +11,8 @@ class Model():
     def __init__(self, G : ComputationalGraph):
         self.G = G
 
-    def fit(self, dataset : Dataset, numEpochs : int, batchSize : int, o : Optimizer, sampleWithReplacement=False):
+    def fit(self, dataset : Dataset, numEpochs : int, batchSize : int, o : Optimizer, sampleWithReplacement=False,
+        epochCallback = None):
 
         self.G.optimizer = o
 
@@ -31,7 +32,9 @@ class Model():
                 self.loadInput(dataset.getTrainingDataFromIndices(batchIndices))
                 self.G.runForwardPass()
                 self.G.runBackwardPass()
-            print("Epoch: {0}, loss: {1}".format(i, self.G.getNode("loss").value))
+            #print("Epoch: {0}, loss: {1}".format(i, self.G.getNode("loss").value))
+            if(epochCallback is not None):
+                epochCallback(i)
 
     @abstractmethod
     def loadInput(self, input : Tuple):

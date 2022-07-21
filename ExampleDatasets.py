@@ -34,6 +34,8 @@ class MNISTDataset(Dataset):
         trainLabelsPath = os.path.join(dirPath, "trainLabels.gz")
         testDataPath = os.path.join(dirPath, "testData.gz")
         testLabelsPath = os.path.join(dirPath, "testLabels.gz")
+        self.transform = transform
+
         if(not os.path.isdir(dirPath)):
             os.mkdir(dirPath)
         
@@ -51,11 +53,13 @@ class MNISTDataset(Dataset):
                 "specified directory")
 
         self.trainingData = self.processImagesGz(trainDataPath, 2051)
+        self.trainingData = np.array(self.trainingData, dtype=float)/255
+
         self.testingData = self.processImagesGz(testDataPath, 2051)
+        self.testingData = np.array(self.trainingData, dtype=float)/255
+
         self.trainingLabels = self.processLabelsGz(trainLabelsPath, 2049)
         self.testingLabels = self.processLabelsGz(testLabelsPath, 2049)
-
-        self.transform = transform
 
 
     def processImagesGz(self, path, magicNumber):

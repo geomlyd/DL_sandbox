@@ -6,16 +6,16 @@ import Transforms
 
 
 whichModel = "mine"
-layerDims = [[784, 300], [300, 100], [100, 10]]
+layerDims = [[784, 32], [32, 10]]
 channelMean = 0.1307
 channelStd = 0.3081
-lr = 0.1
+lr = 0.01
 numEpochs = 100
-batchSize = 64
+batchSize = 128
 
 if(whichModel == "mine"):
     opt = Optimizers.GradientDescentOptimizer(lr)
     dataset = ExampleDatasets.MNISTDataset("./MNIST", 
         Transforms.NormalizeImage(channelMean, channelStd))
     model = ExampleModels.FullyConnectedClassifier(layerDims)
-    model.fit(dataset, numEpochs, batchSize, opt)
+    model.fit(dataset, numEpochs, batchSize, opt, epochCallback=model.printLossAndAccuracy)

@@ -55,6 +55,15 @@ class FullyConnectedClassifier(Model.Model):
         out.trackGradients = False
         self.G.addNode(out, "output")
 
+    def printLossAndAccuracy(self, epoch):
+
+        loss = self.G.getNode("loss").value
+        logits = self.G.getNode("output").value
+        predictions = np.argmax(logits, axis=1)
+        groundTruthClasses = self.G.getNode("y_groundTruth").value
+        accuracy = np.mean(groundTruthClasses == predictions)
+        print("Epoch {0}: loss {1}, accuracy {2}".format(epoch, loss, accuracy))
+
     def loadInput(self, input: Tuple):
         self.G.getNode("x").value = np.reshape(input[0], (-1, 784))
         self.G.getNode("y_groundTruth").value = input[1]
