@@ -8,13 +8,5 @@ class Dataset(ABC):
         pass
 
     @abstractmethod
-    def getTrainingDataFromIndices(self, ind : np.array):
+    def getDataFromIndices(self, ind : np.array):
         pass
-
-    @abstractmethod
-    def getValidationDataFromIndices(self, ind : np.array):
-        pass    
-
-    @abstractmethod
-    def getTestDataFromIndices(self, ind : np.array):
-        pass    

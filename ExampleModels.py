@@ -55,18 +55,50 @@ class FullyConnectedClassifier(Model.Model):
         out.trackGradients = False
         self.G.addNode(out, "output")
 
-    def printLossAndAccuracy(self, epoch):
+    def trainingStep(self, trainingBatch):
+        self.G.getNode("x").value = np.reshape(trainingBatch[0], (-1, 784))
+        self.G.getNode("y_groundTruth").value = trainingBatch[1]
+
+        self.G.runForwardPass(runTraining=True)
+        self.G.runBackwardPass()
 
         loss = self.G.getNode("loss").value
         logits = self.G.getNode("output").value
         predictions = np.argmax(logits, axis=1)
         groundTruthClasses = self.G.getNode("y_groundTruth").value
         accuracy = np.mean(groundTruthClasses == predictions)
-        print("Epoch {0}: loss {1}, accuracy {2}".format(epoch, loss, accuracy))
 
-    def loadInput(self, input: Tuple):
-        self.G.getNode("x").value = np.reshape(input[0], (-1, 784))
-        self.G.getNode("y_groundTruth").value = input[1]
+        self.log("train_loss", loss)
+        self.log("train_acc", accuracy)
+
+    def validationStep(self, validationBatch):
+        self.G.getNode("x").value = np.reshape(validationBatch[0], (-1, 784))
+        self.G.getNode("y_groundTruth").value = validationBatch[1]
+
+        self.G.runForwardPass(runTraining=False)
+
+        loss = self.G.getNode("loss").value
+        logits = self.G.getNode("output").value
+        predictions = np.argmax(logits, axis=1)
+        groundTruthClasses = self.G.getNode("y_groundTruth").value
+        accuracy = np.mean(groundTruthClasses == predictions)
+
+        self.log("val_loss", loss)
+        self.log("val_acc", accuracy)
+
+    def onEpochEnd(self):
+        tmp = np.array(self.logDict["train_acc"])
+        avgTrainAcc = np.mean(tmp[tmp[:, 0] == self.epoch, 1])
+        tmp = np.array(self.logDict["train_loss"])
+        avgTrainLoss = np.mean(tmp[tmp[:, 0] == self.epoch, 1])
+        tmp = np.array(self.logDict["val_loss"])
+        avgValLoss = np.mean(tmp[tmp[:, 0] == self.epoch, 1])    
+        tmp = np.array(self.logDict["val_acc"])
+        avgValAcc = np.mean(tmp[tmp[:, 0] == self.epoch, 1])              
+
+        print("Epoch {0}: training accuracy {1}, training loss {2}, "
+            "validation accuracy {3}, validation loss {4} ".format(
+            self.epoch, avgTrainAcc, avgTrainLoss, avgValAcc, avgValLoss))
 
     def __call__(self, x):
         self.G.getNode("x").value = np.reshape(x, (-1, 784))
@@ -129,9 +161,18 @@ class FullyConnectedRegressor(Model.Model):
         self.G.addNode(lossNode, "reduce_sum", trainOnly=True)
         self.G.addNode(lossOut, "loss", trainOnly=True)
 
-    def loadInput(self, input : Tuple):
-        self.G.getNode("x").value = input[0]
-        self.G.getNode("y_groundTruth").value = input[1]
+    def trainingStep(self, trainingBatch):
+        self.G.getNode("x").value = trainingBatch[0]
+        self.G.getNode("y_groundTruth").value = trainingBatch[1]
+
+        self.G.runForwardPass(runTraining=True)
+        self.G.runBackwardPass()
+
+    def validationStep(self, validationBatch):    
+        self.G.getNode("x").value = validationBatch[0]
+        self.G.getNode("y_groundTruth").value = validationBatch[1]
+
+        self.G.runForwardPass(runTraining=False)
 
     def __call__(self, x):
         self.G.getNode("x").value = x

@@ -26,40 +26,34 @@ class SimpleDataset(Dataset):
 
 class MNISTDataset(Dataset):
 
-    def __init__(self, dirPath : str, transform : Transform = None):
+    def __init__(self, dirPath : str, train : bool = True, transform : Transform = None):
         if(os.path.isfile(dirPath)):
             raise FileExistsError("MNIST dataset: path is already a file, MNIST could not be downloaded")
         
-        trainDataPath = os.path.join(dirPath, "trainData.gz")
-        trainLabelsPath = os.path.join(dirPath, "trainLabels.gz")
-        testDataPath = os.path.join(dirPath, "testData.gz")
-        testLabelsPath = os.path.join(dirPath, "testLabels.gz")
+        dataPath = os.path.join(dirPath, "trainData.gz") if train else os.path.join(dirPath, "testData.gz")
+        labelsPath = os.path.join(dirPath, "trainLabels.gz") if train else os.path.join(dirPath, "testLabels.gz")
+
         self.transform = transform
 
         if(not os.path.isdir(dirPath)):
             os.mkdir(dirPath)
         
-        urlList = ["http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz",
-            "http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz",
-            "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz",
-            "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz"]
-        filenameList = [trainDataPath, trainLabelsPath, testDataPath, testLabelsPath]
+        urlList = ["http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz"
+            if train else "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz",
+            "http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz"
+            if train else "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz"]
+        filenameList = [dataPath, labelsPath]
         for i in range(len(urlList)):
             urllib.request.urlretrieve(urlList[i], filenameList[i])
             
-        if(not (os.path.isfile(trainDataPath) and os.path.isfile(trainLabelsPath) 
-            and os.path.isfile(testDataPath) and os.path.isfile(trainLabelsPath))):
+        if(not (os.path.isfile(dataPath) and os.path.isfile(labelsPath))):
             raise FileNotFoundError("MNIST dataset: files were not found and could not be created in the"
                 "specified directory")
 
-        self.trainingData = self.processImagesGz(trainDataPath, 2051)
-        self.trainingData = np.array(self.trainingData, dtype=float)/255
+        self.data = self.processImagesGz(dataPath, 2051)
+        self.data = np.array(self.data, dtype=float)/255
 
-        self.testingData = self.processImagesGz(testDataPath, 2051)
-        self.testingData = np.array(self.trainingData, dtype=float)/255
-
-        self.trainingLabels = self.processLabelsGz(trainLabelsPath, 2049)
-        self.testingLabels = self.processLabelsGz(testLabelsPath, 2049)
+        self.labels = self.processLabelsGz(labelsPath, 2049)
 
 
     def processImagesGz(self, path, magicNumber):
@@ -101,15 +95,8 @@ class MNISTDataset(Dataset):
             return labels
 
     def __len__(self):
-        return self.testingLabels.shape[0]
+        return self.labels.shape[0]
 
-    def getTrainingDataFromIndices(self, ind: np.array):
-        return (self.trainingData[ind, :, :] if self.transform is None else self.transform(self.trainingData[ind, :, :]),
-            self.trainingLabels[ind])
-
-    def getValidationDataFromIndices(self, ind: np.array):
-        return None
-
-    def getTestDataFromIndices(self, ind: np.array):   
-        return (self.testingData[ind, :, :] if self.transform is None else self.transform(self.testingData[ind, :, :]),
-            self.testingLabels[ind])
+    def getDataFromIndices(self, ind: np.array):
+        return (self.data[ind, :, :] if self.transform is None else self.transform(self.data[ind, :, :]),
+            self.labels[ind])

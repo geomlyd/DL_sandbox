@@ -15,7 +15,10 @@ batchSize = 128
 
 if(whichModel == "mine"):
     opt = Optimizers.GradientDescentOptimizer(lr)
-    dataset = ExampleDatasets.MNISTDataset("./MNIST", 
-        Transforms.NormalizeImage(channelMean, channelStd))
+    trainingDataset = ExampleDatasets.MNISTDataset("./MNIST",
+        transform=Transforms.NormalizeImage(channelMean, channelStd), train=True)
+    validationDataset = ExampleDatasets.MNISTDataset("./MNIST",
+        train=False)
     model = ExampleModels.FullyConnectedClassifier(layerDims)
-    model.fit(dataset, numEpochs, batchSize, opt, epochCallback=model.printLossAndAccuracy)
+    model.fit(trainingDataset, validationDataset, numEpochs, batchSize, 
+        batchSize, opt)

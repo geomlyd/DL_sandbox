@@ -10,34 +10,64 @@ class Model():
 
     def __init__(self, G : ComputationalGraph):
         self.G = G
+        self.logDict = {}
+        self.epoch = -1
 
-    def fit(self, dataset : Dataset, numEpochs : int, batchSize : int, o : Optimizer, sampleWithReplacement=False,
-        epochCallback = None):
+    def fit(self, trainDataset : Dataset, valDataset : Dataset, 
+        numEpochs : int, trainBatchSize : int, valBatchSize : int, o : Optimizer, sampleWithReplacement=False):
 
         self.G.optimizer = o
 
-        dataLen = len(dataset)
-        numBatches = int(np.ceil(dataLen/batchSize))
+        trainDataLen = len(trainDataset)
+        numTrainBatches = int(np.ceil(trainDataLen/trainBatchSize))
+
+        valDataLen = len(valDataset)
+        numValBatches = int(np.ceil(valDataLen/valBatchSize))
         for i in range(numEpochs):
-            dataPermutation = np.random.permutation(dataLen)
+            self.epoch = i
+            dataPermutation = np.random.permutation(trainDataLen)
             low = 0 
-            for batch in range(numBatches):
+            for batch in range(numTrainBatches):
 
                 if(sampleWithReplacement):
-                    batchIndices = np.random.random_integers(0, high = dataLen - 1, size=batchSize)
+                    batchIndices = np.random.random_integers(0, high = trainDataLen - 1, size=trainBatchSize)
                 else:
-                    batchIndices = np.arange(low, low + batchSize)
-                    low += batchSize
+                    batchIndices = dataPermutation[np.arange(low, 
+                        min(trainDataLen - 1, low + trainBatchSize))]
+                    low += trainBatchSize
                 
-                self.loadInput(dataset.getTrainingDataFromIndices(batchIndices))
-                self.G.runForwardPass()
-                self.G.runBackwardPass()
-            #print("Epoch: {0}, loss: {1}".format(i, self.G.getNode("loss").value))
-            if(epochCallback is not None):
-                epochCallback(i)
+                self.trainingStep(trainDataset.getDataFromIndices(batchIndices))
+
+            dataPermutation = np.random.permutation(valDataLen)
+            low = 0
+            for batch in range(numValBatches):
+
+                if(sampleWithReplacement):
+                    batchIndices = np.random.random_integers(0, high = valDataLen - 1, size=valBatchSize)
+                else:
+                    batchIndices = dataPermutation[np.arange(low, 
+                        min(valDataLen, low + valBatchSize))]
+                    low += valBatchSize 
+
+                self.validationStep(valDataset.getDataFromIndices(batchIndices))
+
+            self.onEpochEnd()
+
+    def log(self, quantityName : str, quantityValue):
+        if(quantityName not in self.logDict):
+            self.logDict[quantityName] = [[self.epoch, quantityValue]]
+        else:
+            self.logDict[quantityName].append([self.epoch, quantityValue])
+
+    def onEpochEnd(self):
+        pass
 
     @abstractmethod
-    def loadInput(self, input : Tuple):
+    def trainingStep(self, trainingBatch):
+        pass
+
+    @abstractmethod
+    def validationStep(self, validationBatch):
         pass
 
     @abstractmethod           
