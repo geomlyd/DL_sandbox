@@ -1,11 +1,28 @@
 from platform import node
-from typing import Any
+from typing import Any, List
 import numpy as np
 import graphlib
 
 from ComputationalGraph import ComputationalGraph
 import CommonNodes
 
+def generateNewEdges(sourceVertices : List[str], targetVertices : List[str], maxInDegree, edgeProb):
+        numSourceVertices = len(sourceVertices)
+        numTargetVertices = len(targetVertices)
+
+        newEdges = np.random.random((numSourceVertices, numTargetVertices))
+        ind = newEdges < edgeProb
+        newEdges[ind] = 1
+        newEdges[np.logical_not(ind)] = 0
+
+        tmp = np.cumsum(newEdges, axis=0)
+        newEdges[tmp > maxInDegree] = 0
+        
+        newEdgesByNames = [(sourceVertices[i], targetVertices[j]) 
+            for j in range(numTargetVertices) for i in range(len(numSourceVertices)) if newEdges[i, j]]
+        #print(newEdgesByNames)
+        assert(len(newEdgesByNames) == np.sum(newEdges))
+        return newEdgesByNames
 
 class DAG():
 
@@ -22,19 +39,9 @@ class DAG():
             numVertices = np.random.randint(maxNodesPerLayer + 1)
             layerVertices = ["l" + str(l) + "_n" + str(v) for v in range(numVertices)]
             if(l > 0):
-                newEdges = np.random.random((len(prevVertices), numVertices))
-                ind = newEdges < edgeProbability
-                newEdges[ind] = 1
-                newEdges[np.logical_not(ind)] = 0
-
-                tmp = np.cumsum(newEdges, axis=0)
-                newEdges[tmp > maxInDegree] = 0
-                
-                newEdgesByNames = [(prevVertices[i], layerVertices[j]) 
-                    for j in range(numVertices) for i in range(len(prevVertices)) if newEdges[i, j]]
-                print(newEdgesByNames)
-                assert(len(newEdgesByNames) == np.sum(newEdges))
-                
+ 
+                newEdgesByNames = generateNewEdges(prevVertices, layerVertices, 
+                    maxInDegree, edgeProbability)
                 
                 for edge in newEdgesByNames:
                     if(edge[0] not in self.edgeTable):
@@ -72,25 +79,25 @@ class DAG():
         return self._outputVertices
 
     def getInDegree(self, nodeName):
-        return len(self.inConnections[nodeName])
+        return len(self.inConnections[nodeName]) if nodeName in self.inConnections else 0
 
     def getInConnections(self, nodeName):
-        return self.inConnections[nodeName]
+        return self.inConnections[nodeName] if nodeName in self.inConnections else []
 
 class GraphNodeInformation():
     def __init__(self):
         self.nodesByInDegree = {}
         self.allNodes = set({})
 
-    def addNode(self, nodeName : str, inDegree : int):
+    def addNode(self, nodeName : str, constructorFunc, inDegree : int):
 
         if(nodeName in self.allNodes):
             raise ValueError("A node named \"" + nodeName + "\" is already registered")
 
         if inDegree not in self.nodesByInDegree:
-            self.nodesByInDegree[inDegree] = set({nodeName})
+            self.nodesByInDegree[inDegree] = set({(nodeName, constructorFunc)})
         else:
-            self.nodesByInDegree[inDegree].add(nodeName)
+            self.nodesByInDegree[inDegree].add((nodeName, constructorFunc))
         self.allNodes.add(nodeName)
 
     def getNodesByInDegree(self, inDegree : int):
@@ -99,18 +106,15 @@ class GraphNodeInformation():
 class DAGToComputationalGraph():
 
     def __init__(self, inputNodeName, outputNodeName):
-        self.nodeNamesToConstructors = {}
         self.inputNodeName = inputNodeName
         self.outputNodeName = outputNodeName
         self.nodeInformation = GraphNodeInformation()
 
     def registerNode(self, nodeName : str, constructorFunc : Any, inDegree : int):
-        self.nodeInformation.addNode(nodeName, inDegree)
-
-        self.nodeNamesToConstructors[nodeName] = constructorFunc
+        self.nodeInformation.addNode(nodeName, constructorFunc, inDegree)
 
     def convertDAGToCompGraph(self, dag : DAG):
-        graphIterator = dag.getGraphIterator()
+        graphIterator = dag.graphIterator
         G = ComputationalGraph()
         graphOutputNodenames = []
         graphInputNodeNames = []
@@ -129,13 +133,10 @@ class DAGToComputationalGraph():
             f = possibleFuncs[i][1]
             inConnections = dag.getInConnections(vertex)
             inNodes = [G.getNode(_) for _ in inConnections]
-            G.addNode(vertex, f(inNodes))
+            G.addNode(f(inNodes), vertex)
 
         
         return G
 
-
-
-DAG(5, 20, 2, 0.1)
 
                 
