@@ -1,18 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from sys import settrace
 from typing import Dict, Any, List
-
-# class EdgeBuffer():
-
-#     def __init__(self):
-#         self.buffer = None
-
-#     def writeToEdge(self, content):
-#         self.buffer = content
-
-#     def readFromEdge(self):
-#         return self.buffer
 
 
 class GraphNode(ABC):
@@ -23,10 +11,8 @@ class GraphNode(ABC):
         self._value = None
         self._inEdges = []
         self._isTrainable = isTrainable
-        self.trackGradients = trackGradients
-        self.paramGradients = []
-        # self.inEdges = {}
-        # self.outEdges = {}
+        self._trackGradients = trackGradients
+        self._paramGradients = []
 
     @abstractmethod
     def forwardPass(self):
@@ -44,6 +30,10 @@ class GraphNode(ABC):
     def value(self):
         return self._value
 
+    @value.setter
+    def value(self, v):
+        self._value = v        
+
     @property
     def inEdges(self):
         return self._inEdges
@@ -52,9 +42,17 @@ class GraphNode(ABC):
     def inEdges(self, inEdges):
         self._inEdges = inEdges
 
-    @value.setter
-    def value(self, v):
-        self._value = v
+    @property
+    def trackGradients(self):
+        return self._trackGradients
+
+    @property
+    def paramGradients(self):
+        return self._paramGradients
+
+    @trackGradients.setter
+    def trackGradients(self, trackGradients):
+        self._trackGradients = trackGradients    
 
     def clearGradients(self):
         self.paramGradients = []
@@ -62,14 +60,7 @@ class GraphNode(ABC):
         self.gradients = []
 
     def receiveGradient(self, grad):
-        #self.gradients.append(grad)
         self.totalGradient += grad
-
-    def getParamGradient(self):
-        return self.paramGradients
-    
-    def setTrackGradients(self, trackGradients):
-        self.trackGradients = trackGradients
 
     def registerInEdges(self, sourceNodes : list[GraphNode]):
         self._inEdges += sourceNodes

@@ -9,10 +9,10 @@ class InputNode(GraphNode):
 
     def __init__(self, value=None):
         super().__init__()
-        self._value = value
+        self.value = value
 
     def setValue(self, v):
-        self._value = v
+        self.value = v
 
     def forwardPass(self):
         pass
@@ -30,6 +30,9 @@ class OutputNode(GraphNode):
 
     def setProducer(self, p : GraphNode):
         self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        self.registerInEdges([p])
 
     def forwardPass(self):
         self.value = self.producer.value
@@ -57,20 +60,19 @@ class Add(GraphNode):
         self.producers = producers    
         self.registerInEdges(producers)
 
-    def addProducer(self, p : GraphNode):
+    def registerProducer(self, p : GraphNode):
         self.producers.append(p)
+        self.registerInEdges([p])
 
     def forwardPass(self):
-        v = 0
+        self.value  = 0
         for p in self.producers:
-            v += p.value()
-        self.value = v
+            self.value  += p.value()
 
     def backwardPass(self):
         for p in self.producers:
             p.receiveGradient(self.totalGradient)
         
-
 class PointwiseMul(GraphNode):
 
     def __init__(self, producers : List[GraphNode] = None):
@@ -78,14 +80,14 @@ class PointwiseMul(GraphNode):
         self.producers = producers    
         self.registerInEdges(producers)
 
-    def addProducer(self, p : GraphNode):
+    def registerProducer(self, p : GraphNode):
         self.producers.append(p)
+        self.registerInEdges([p])
 
     def forwardPass(self):
-        v = 1
+        self.value = 1
         for p in self.producers:
-            v  *= p.value
-        self.value = v
+            self.value *= p.value
 
     def backwardPass(self):
         for p in self.producers:
@@ -98,12 +100,6 @@ class PointwiseDivide(GraphNode):
         self.numerator = numerator
         self.denominator = denominator 
         self.registerInEdges([numerator, denominator])
-
-    def setNumerator(self, n : GraphNode):
-        self.numerator = n
-
-    def setDenominator(self, d : GraphNode):
-        self.denominator = d
 
     def forwardPass(self):
         self.value = np.divide(self.numerator.value, self.denominator.value)
@@ -121,12 +117,6 @@ class Subtract(GraphNode):
         self.valueToSubtract = valueToSubtract 
         self.registerInEdges([subtractFrom, valueToSubtract])
 
-    def setSubtractFrom(self, n : GraphNode):
-        self.subtractFrom = n
-
-    def setValueToSubtract(self, n : GraphNode):
-        self.setValueToSubtract = n
-
     def forwardPass(self):
         self.value = self.subtractFrom.value - self.valueToSubtract.value
 
@@ -143,15 +133,14 @@ class Square(GraphNode):
 
     def setProducer(self, p : GraphNode):
         self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        self.registerInEdges([p])        
 
     def forwardPass(self):
         self.value = np.square(self.producer.value)
-        # if(self.trackGradients):
-        #     self.cachedArg = self.producer.value()
 
     def backwardPass(self):
-        #gradShape = self.gradients.shape
-        #argShape = self.cachedArg.shape
         self.producer.receiveGradient(self.totalGradient*2*self.producer.value)
 
 class Log(GraphNode):
@@ -163,6 +152,9 @@ class Log(GraphNode):
 
     def setProducer(self, p : GraphNode):
         self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        self.registerInEdges([p])        
 
     def forwardPass(self):
         self.value = np.log(self.producer.value)
@@ -179,6 +171,9 @@ class Sin(GraphNode):
 
     def setProducer(self, p : GraphNode):
         self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        self.registerInEdges([p])        
 
     def forwardPass(self):
         self.value = np.sin(self.producer.value)
@@ -194,15 +189,18 @@ class ReLU(GraphNode):
         self.registerInEdges([producer])
 
     def setProducer(self, p : GraphNode):
-        self.producer = p   
+        self.producer = p
+        if(len(self.inEdges) > 0):
+            self.inEdges = []
+        self.registerInEdges([p])
 
     def forwardPass(self):
         v = self.producer.value
         self.value = np.copy(v)
-        self.value[self.value < 0] = 0#0.01*self.value[self.value < 0]
+        self.value[self.value < 0] = 0
 
     def backwardPass(self):
-        g = np.zeros(self.totalGradient.shape) #+ 0.01
+        g = np.zeros(self.totalGradient.shape)
         g[self.value > 0] = 1
         self.producer.receiveGradient(g*self.totalGradient)
 
@@ -245,7 +243,6 @@ class AffineTransformation(GraphNode):
             self.totalGradient = self.totalGradient[:, None]
         self.producer.receiveGradient(np.matmul(self.totalGradient, self.W.T))
 
-
         if(self.isTrainable):
             self.paramGradients = []
             self.paramGradients.append((np.matmul(self.producer.value.T, self.totalGradient).flatten()))
@@ -264,8 +261,7 @@ class ReduceMean(GraphNode):
         self.producer = p
         if(len(self.inEdges) > 0):
             self.inEdges = []
-        if(p is not None):
-            self.registerInEdges([p])
+        self.registerInEdges([p])            
 
     def forwardPass(self):
         self.value = np.sum(self.producer.value)/self.producer.value.size
@@ -286,8 +282,7 @@ class LogSoftmax(GraphNode):
         self.producer = p
         if(len(self.inEdges) > 0):
             self.inEdges = []
-        if(p is not None):
-            self.registerInEdges([p])
+        self.registerInEdges([p])            
 
     def forwardPass(self):
         self.cachedMaxVal = np.max(self.producer.value, axis=1)[:, None]
